@@ -17,6 +17,7 @@ var pass_variant_buttons: Dictionary = {}  # MatchManager.PassVariant -> Button
 
 var _turn_style: StyleBoxFlat   # a borda do painel do topo leva a cor do time da vez
 var _last_team: int = -1
+var _last_team_color: Color = Color.TRANSPARENT
 var _color_tween: Tween
 
 
@@ -160,11 +161,12 @@ func _refresh() -> void:
 ## A borda do painel do topo muda (suavemente) para a cor do time da vez
 func _update_team_border() -> void:
 	var team: int = manager.current_team
-	if team == _last_team:
+	var color: Color = TeamStyle.color_of(team)
+	if team == _last_team and color == _last_team_color:
 		return
 	var first: bool = _last_team == -1
 	_last_team = team
-	var color: Color = Player.TEAM_COLORS[team % Player.TEAM_COLORS.size()]
+	_last_team_color = color
 	if _color_tween and _color_tween.is_valid():
 		_color_tween.kill()
 	if first:

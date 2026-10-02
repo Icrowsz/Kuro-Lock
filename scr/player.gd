@@ -19,12 +19,6 @@ enum Role { NONE, PROTAGONIST, SECONDARY }
 ## Tipo de chute possível agora (depende da altura do jogador e da bola)
 enum KickType { NONE, GROUND, VOLLEY, FLYING, HIGH_BALL }
 
-## Cor de cada time (índice = número do time)
-const TEAM_COLORS: Array[Color] = [
-	Color(0.9, 0.22, 0.27),   # Time 0: vermelho
-	Color(0.11, 0.44, 0.88),  # Time 1: azul
-]
-
 @export var team: int = 0:
 	set(value):
 		team = value
@@ -163,8 +157,16 @@ func get_display_name() -> String:
 	return display_name if display_name != "" else String(name)
 
 
+## A cor vem do TeamStyle (o jogador escolhe na tela de formação)
 func get_team_color() -> Color:
-	return TEAM_COLORS[team % TEAM_COLORS.size()]
+	return TeamStyle.color_of(team)
+
+
+## Chame depois que a cor do time mudar (o sprite pintado e o desenho se atualizam)
+func refresh_team_color() -> void:
+	if tint_sprite:
+		tint_sprite.modulate = get_team_color()
+	queue_redraw()
 
 
 ## Este jogador consegue interagir com algo neste nível? (usado por Chutar/Passe etc.)

@@ -648,7 +648,7 @@ func _clear_pending_pass() -> void:
 func _spawn_pass_marker(team: int, pos: Vector2, ball: Ball) -> void:
 	_remove_pass_marker()
 	_pass_marker = PassMarker.new()
-	_pass_marker.color = Player.TEAM_COLORS[team % Player.TEAM_COLORS.size()].lightened(0.4)
+	_pass_marker.color = TeamStyle.color_of(team).lightened(0.4)
 	ball.get_parent().add_child(_pass_marker)
 	_pass_marker.global_position = pos
 
@@ -876,7 +876,12 @@ func get_team_players(team: int) -> Array[Player]:
 	return result
 
 
+## Nome do time: o que o jogador digitou na formação, ou o padrão (team_names)
 func get_team_name(team: int) -> String:
+	return TeamStyle.name_of(team, get_default_team_name(team))
+
+
+func get_default_team_name(team: int) -> String:
 	if team < team_names.size():
 		return team_names[team]
 	return "Time %d" % team

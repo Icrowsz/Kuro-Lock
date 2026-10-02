@@ -167,6 +167,7 @@ func _on_formation_started() -> void:
 
 func _on_match_started() -> void:
 	visible = true
+	_refresh_scores()   # os times podem ter mudado de nome e cor na formação
 
 
 func _on_back_pressed(button: Button) -> void:
@@ -263,6 +264,7 @@ func _goal_description(goal: Dictionary) -> String:
 func _refresh_scores() -> void:
 	for t in _score_labels.size():
 		_score_labels[t].text = "%s %d" % [manager.get_team_name(t), manager.scores[t]]
+		_score_labels[t].add_theme_color_override("font_color", _team_color(t))   # o time pode ter mudado a cor
 		# Quando o time marca, o número dele dá um "pulinho"
 		if manager.scores[t] != _last_scores[t]:
 			_last_scores[t] = manager.scores[t]
@@ -272,4 +274,4 @@ func _refresh_scores() -> void:
 # ---------- UTIL ----------
 
 func _team_color(team: int) -> Color:
-	return Player.TEAM_COLORS[team % Player.TEAM_COLORS.size()]
+	return TeamStyle.color_of(team)

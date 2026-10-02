@@ -28,6 +28,8 @@ var _title: Label
 var _title_style: StyleBoxFlat
 var _preset_box: HBoxContainer
 var _character_box: HBoxContainer   # um seletor de personagem por jogador do time
+var _name_edit: LineEdit             # nome do time
+var _swatch_box: HBoxContainer       # bolinhas de cor do time
 var _confirm_button: Button
 
 
@@ -101,6 +103,27 @@ func _build_ui() -> void:
 	top_box.add_child(UiStyle.make_label(
 		"Arraste os jogadores dentro da sua metade (área colorida) ou escolha uma formação pronta", 16))
 
+	# Nome e cor do time
+	var team_row := HBoxContainer.new()
+	team_row.alignment = BoxContainer.ALIGNMENT_CENTER
+	team_row.add_theme_constant_override("separation", 10)
+	team_row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	top_box.add_child(team_row)
+
+	team_row.add_child(UiStyle.make_label("Nome do time:", 16))
+	_name_edit = LineEdit.new()
+	_name_edit.custom_minimum_size = Vector2(190, 0)
+	_name_edit.max_length = TeamStyle.MAX_NAME_LENGTH
+	_name_edit.text_changed.connect(_on_name_changed)
+	_name_edit.text_submitted.connect(func(_text: String) -> void: _name_edit.release_focus())
+	team_row.add_child(_name_edit)
+
+	team_row.add_child(UiStyle.make_label("Cor:", 16))
+	_swatch_box = HBoxContainer.new()
+	_swatch_box.add_theme_constant_override("separation", 6)
+	_swatch_box.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	team_row.add_child(_swatch_box)
+
 	# Rodapé: formações prontas + confirmar
 	var bottom := PanelContainer.new()
 	bottom.set_anchors_preset(Control.PRESET_CENTER_BOTTOM)
@@ -145,6 +168,7 @@ func _rebuild_presets() -> void:
 	for formation in Formations.presets_for(count):
 		var b := Button.new()
 		b.text = formation
+		b.tooltip_text = Formations.nickname(formation)
 		b.pressed.connect(_apply_preset.bind(formation))
 		UiStyle.style_button(b)
 		_preset_box.add_child(b)
@@ -154,6 +178,79 @@ func _rebuild_presets() -> void:
 	restore.pressed.connect(_restore)
 	UiStyle.style_button(restore, Color(0.75, 0.30, 0.30))
 	_preset_box.add_child(restore)
+
+
+# ---------- NOME E COR DO TIME ----------
+
+func _on_name_changed(text: String) -> void:
+	TeamStyle.set_team_name(_team, text)   # vazio = volta ao nome padrão
+	_title.text = "Formação — %s" % manager.get_team_name(_team)
+
+
+## Uma bolinha por cor da paleta. A do time está marcada; a que já é de um time que
+## confirmou a formação fica apagada (um time ainda editando troca de cor com este).
+func _rebuild_swatches() -> void:
+	for child in _swatch_box.get_children():
+		_swatch_box.remove_child(child)
+		child.queue_free()
+
+	var mine: Color = TeamStyle.color_of(_team)
+	for entry in TeamStyle.PALETTE:
+		var color: Color = entry["color"]
+		var taken: bool = false
+		for t in manager.team_count:
+			if t != _team and _confirmed[t] and TeamStyle.color_of(t).is_equal_approx(color):
+				taken = true
+
+		var b := Button.new()
+		b.custom_minimum_size = Vector2(32, 32)
+		b.focus_mode = Control.FOCUS_NONE
+		b.disabled = taken
+		b.tooltip_text = ("%s (já é a cor do outro time)" if taken else "%s") % entry["name"]
+		var selected: bool = color.is_equal_approx(mine)
+		for state in ["normal", "hover", "pressed", "disabled", "focus"]:
+			var sb := StyleBoxFlat.new()
+			sb.bg_color = color.darkened(0.65) if taken else color
+			if state == "hover":
+				sb.bg_color = color.lightened(0.2)
+			sb.set_corner_radius_all(16)
+			sb.set_border_width_all(4 if selected else 2)
+			sb.border_color = Color.WHITE if selected else Color(1, 1, 1, 0.3)
+			b.add_theme_stylebox_override(state, sb)
+		b.pressed.connect(_on_color_picked.bind(color))
+		_swatch_box.add_child(b)
+
+
+func _on_color_picked(color: Color) -> void:
+	var old: Color = TeamStyle.color_of(_team)
+	if color.is_equal_approx(old):
+		return
+
+	# Se outro time (que ainda não confirmou) já usa essa cor, os dois trocam de cor
+	for t in manager.team_count:
+		if t != _team and TeamStyle.color_of(t).is_equal_approx(color):
+			TeamStyle.set_color(t, old)
+			_refresh_team_visuals(t)
+
+	TeamStyle.set_color(_team, color)
+	_refresh_team_visuals(_team)
+
+	_overlay.color = color
+	_overlay.queue_redraw()
+	if _color_tween and _color_tween.is_valid():
+		_color_tween.kill()
+	_color_tween = create_tween()
+	_color_tween.tween_property(_title_style, "border_color", color, 0.25)
+	_rebuild_swatches()
+
+
+## Repinta os jogadores e o goleiro de um time depois da troca de cor
+func _refresh_team_visuals(team: int) -> void:
+	for p in manager.get_team_players(team):
+		p.refresh_team_color()
+	for g in get_tree().get_nodes_in_group("goalkeepers"):
+		if g.get("team") == team:
+			(g as CanvasItem).queue_redraw()
 
 
 ## Um seletor de personagem para cada jogador do time atual
@@ -222,7 +319,7 @@ func _begin_team(team: int) -> void:
 	for p in players:
 		_snapshot[p] = p.global_position
 
-	var color: Color = Player.TEAM_COLORS[team % Player.TEAM_COLORS.size()]
+	var color: Color = TeamStyle.color_of(team)
 	_overlay.rect = Formations.team_area(team, _field)
 	_overlay.color = color
 	_overlay.slots.clear()
@@ -232,6 +329,10 @@ func _begin_team(team: int) -> void:
 	_overlay.queue_redraw()
 
 	_title.text = "Formação — %s" % manager.get_team_name(team)
+	_name_edit.placeholder_text = manager.get_default_team_name(team)
+	_name_edit.text = manager.get_team_name(team) if TeamStyle.has_custom_name(team) else ""
+	_name_edit.release_focus()
+	_rebuild_swatches()
 	if _color_tween and _color_tween.is_valid():
 		_color_tween.kill()
 	_color_tween = create_tween()
@@ -293,7 +394,7 @@ func _start_move() -> void:
 		var p: Player = key
 		_move_tween.tween_property(p, "global_position", _targets[key], 0.35) \
 			.set_trans(Tween.TRANS_SINE).set_ease(Tween.EASE_IN_OUT)
-	_move_tween.finished.connect(_targets.clear, CONNECT_ONE_SHOT)
+	_move_tween.finished.connect(func() -> void: _targets.clear(), CONNECT_ONE_SHOT)
 
 
 ## Se uma formação ainda está deslizando, termina na hora (evita brigar com o arrastar/confirmar)
@@ -330,6 +431,7 @@ func _unhandled_input(event: InputEvent) -> void:
 
 	if event is InputEventMouseButton and event.button_index == MOUSE_BUTTON_LEFT:
 		if event.pressed:
+			_name_edit.release_focus()   # clicar no campo tira o cursor do campo de nome
 			var p: Player = _player_at(_mouse_world())
 			if p != null:
 				_finish_move()

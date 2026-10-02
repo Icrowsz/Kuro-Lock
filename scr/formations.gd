@@ -13,6 +13,26 @@ const PRESETS := {
 	3: ["2-1", "1-1-1"],
 	4: ["1-1-2", "1-2-1"],
 	5: ["1-2-2", "2-1-2", "2-2-1"],
+	6: ["2-3-1", "3-2-1", "2-2-2", "1-3-2", "3-1-2", "2-1-2-1"],
+	# 8x8: goleiro + 7 jogadores de linha
+	7: ["3-3-1", "2-3-2", "3-2-2", "2-4-1", "4-2-1", "2-2-3", "3-1-2-1"],
+}
+
+## Apelido de cada formação (aparece ao passar o mouse no botão)
+const NICKNAMES := {
+	"2-3-1": "Meio-campo povoado",
+	"3-2-1": "Defensiva, um atacante",
+	"2-2-2": "Quadrado equilibrado",
+	"1-3-2": "Ofensiva",
+	"3-1-2": "Defesa forte e dois atacantes",
+	"2-1-2-1": "Losango",
+	"3-3-1": "Equilibrada",
+	"2-3-2": "Ofensiva equilibrada",
+	"3-2-2": "Defesa sólida, dois atacantes",
+	"2-4-1": "Meio-campo forte",
+	"4-2-1": "Retranca",
+	"2-2-3": "Ataque total",
+	"3-1-2-1": "Losango com três na defesa",
 }
 
 ## Onde ficam a primeira e a última linha, como fração da metade do campo contada a partir
@@ -33,6 +53,11 @@ static func presets_for(player_count: int) -> Array[String]:
 	else:
 		result.append(_auto_formation(player_count))
 	return result
+
+
+## Apelido da formação (vazio se não tiver)
+static func nickname(formation: String) -> String:
+	return NICKNAMES.get(formation, "")
 
 
 ## Formação automática: distribui em linhas de até 2 jogadores (sobra vai para a defesa)

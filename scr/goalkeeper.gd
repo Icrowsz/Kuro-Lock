@@ -502,7 +502,7 @@ func _draw() -> void:
 	draw_circle(Vector2.ZERO, body_radius, Color(0, 0, 0, 0.3))  # sombra no chão
 	var center := Vector2(0, -height)
 	draw_circle(center, body_radius, keeper_color)
-	draw_arc(center, body_radius, 0.0, TAU, 32, Player.TEAM_COLORS[team % Player.TEAM_COLORS.size()], 4.0)
+	draw_arc(center, body_radius, 0.0, TAU, 32, TeamStyle.color_of(team), 4.0)
 	match state:
 		State.PREPARING:
 			draw_arc(center, body_radius + 6.0, 0.0, TAU, 32, Color(1, 1, 1, 0.9), 2.0)
