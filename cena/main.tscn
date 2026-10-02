@@ -48,7 +48,6 @@ margin = 500.0
 script = ExtResource("1_3tt73")
 
 [node name="Bola" parent="." unique_id=235203312 instance=ExtResource("4_mk8v6")]
-position = Vector2(896, 0)
 shadow_min_scale = 0.3
 
 [node name="ActionMenu" type="CanvasLayer" parent="." unique_id=362173156 node_paths=PackedStringArray("manager")]
@@ -59,50 +58,50 @@ manager = NodePath("../MatchManager")
 zoom = Vector2(0.6, 0.6)
 
 [node name="Player" parent="." unique_id=1241627939 instance=ExtResource("3_y3eto")]
-position = Vector2(-656, -392)
+position = Vector2(-512, -576)
 
 [node name="Player2" parent="." unique_id=166095077 instance=ExtResource("3_y3eto")]
-position = Vector2(-856, -368)
+position = Vector2(-448, -576)
 
 [node name="Player3" parent="." unique_id=1471082405 instance=ExtResource("3_y3eto")]
-position = Vector2(-704, -280)
+position = Vector2(-384, -576)
 
 [node name="Player4" parent="." unique_id=1544597435 instance=ExtResource("3_y3eto")]
-position = Vector2(-632, -480)
+position = Vector2(-320, -576)
 
 [node name="Player5" parent="." unique_id=724059892 instance=ExtResource("3_y3eto")]
-position = Vector2(856, 0)
+position = Vector2(-256, -576)
 
 [node name="Player6" parent="." unique_id=1294506809 instance=ExtResource("3_y3eto")]
-position = Vector2(768, -128)
+position = Vector2(-192, -576)
 
 [node name="Player7" parent="." unique_id=1750265289 instance=ExtResource("3_y3eto")]
-position = Vector2(704, -64)
+position = Vector2(-128, -576)
 
 [node name="Player8" parent="." unique_id=51643661 instance=ExtResource("3_y3eto")]
-position = Vector2(968, -528)
+position = Vector2(128, -576)
 team = 1
 
 [node name="Player9" parent="." unique_id=680462510 instance=ExtResource("3_y3eto")]
-position = Vector2(928, -528)
+position = Vector2(192, -576)
 team = 1
 
 [node name="Player10" parent="." unique_id=800523095 instance=ExtResource("3_y3eto")]
-position = Vector2(888, -528)
+position = Vector2(256, -576)
 team = 1
 
 [node name="Player11" parent="." unique_id=278626141 instance=ExtResource("3_y3eto")]
-position = Vector2(848, -528)
+position = Vector2(320, -576)
 team = 1
 
 [node name="Player12" parent="." unique_id=1231334177 instance=ExtResource("3_y3eto")]
-position = Vector2(608, -408)
+position = Vector2(384, -576)
 team = 1
 
 [node name="Player13" parent="." unique_id=446724474 instance=ExtResource("3_y3eto")]
-position = Vector2(768, -528)
+position = Vector2(448, -576)
 team = 1
 
 [node name="Player14" parent="." unique_id=1316463404 instance=ExtResource("3_y3eto")]
-position = Vector2(728, -528)
+position = Vector2(512, -576)
 team = 1
