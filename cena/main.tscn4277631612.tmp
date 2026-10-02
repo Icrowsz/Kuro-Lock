@@ -1,0 +1,22 @@
+[gd_scene format=3 uid="uid://vyuwdkpu5dcw"]
+
+[ext_resource type="Script" uid="uid://c4aqlxfarewy5" path="res://scr/match_manager.gd" id="1_3tt73"]
+[ext_resource type="Script" uid="uid://bv7l08fuxc1ck" path="res://scr/action_menu.gd" id="2_7ije6"]
+[ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="3_y3eto"]
+[ext_resource type="PackedScene" uid="uid://bcstqrdud6opd" path="res://cena/bola.tscn" id="4_mk8v6"]
+
+[node name="Main" type="Node2D" unique_id=1825738983]
+
+[node name="Field" type="Node2D" parent="." unique_id=679632803]
+
+[node name="MatchManager" type="Node2D" parent="." unique_id=1461380594]
+script = ExtResource("1_3tt73")
+
+[node name="ActionMenu" type="CanvasLayer" parent="." unique_id=362173156]
+script = ExtResource("2_7ije6")
+
+[node name="Player" parent="." unique_id=1241627939 instance=ExtResource("3_y3eto")]
+position = Vector2(392, 408)
+
+[node name="Bola" parent="." unique_id=235203312 instance=ExtResource("4_mk8v6")]
+position = Vector2(504, 432)

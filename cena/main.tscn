@@ -1,0 +1,108 @@
+[gd_scene format=3 uid="uid://vyuwdkpu5dcw"]
+
+[ext_resource type="Script" uid="uid://c4aqlxfarewy5" path="res://scr/match_manager.gd" id="1_3tt73"]
+[ext_resource type="Script" uid="uid://cqeriiew22lbc" path="res://scr/field.gd" id="1_mk8v6"]
+[ext_resource type="Script" uid="uid://bv7l08fuxc1ck" path="res://scr/action_menu.gd" id="2_7ije6"]
+[ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="3_y3eto"]
+[ext_resource type="PackedScene" uid="uid://bcstqrdud6opd" path="res://cena/bola.tscn" id="4_mk8v6"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_g6c8f"]
+size = Vector2(144, 1344)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pnk5n"]
+size = Vector2(144, 1344)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_85mlr"]
+size = Vector2(2688, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_jb6vp"]
+size = Vector2(2688, 64)
+
+[node name="Main" type="Node2D" unique_id=1825738983]
+
+[node name="Barreiras" type="StaticBody2D" parent="." unique_id=1114693915]
+
+[node name="Direita" type="CollisionShape2D" parent="Barreiras" unique_id=1145458346]
+position = Vector2(1272, 0)
+shape = SubResource("RectangleShape2D_g6c8f")
+
+[node name="Esquerda" type="CollisionShape2D" parent="Barreiras" unique_id=2112981153]
+position = Vector2(-1272, 0)
+shape = SubResource("RectangleShape2D_pnk5n")
+
+[node name="Cima" type="CollisionShape2D" parent="Barreiras" unique_id=1451737163]
+position = Vector2(0, -704)
+shape = SubResource("RectangleShape2D_85mlr")
+
+[node name="Baixo" type="CollisionShape2D" parent="Barreiras" unique_id=1836806044]
+position = Vector2(0, 704)
+shape = SubResource("RectangleShape2D_jb6vp")
+
+[node name="Field" type="Node2D" parent="." unique_id=679632803 node_paths=PackedStringArray("ball")]
+script = ExtResource("1_mk8v6")
+ball = NodePath("../Bola")
+pitch_size = Vector2(2400, 1350)
+margin = 500.0
+
+[node name="MatchManager" type="Node2D" parent="." unique_id=1461380594]
+script = ExtResource("1_3tt73")
+
+[node name="Bola" parent="." unique_id=235203312 instance=ExtResource("4_mk8v6")]
+position = Vector2(896, 0)
+shadow_min_scale = 0.3
+
+[node name="ActionMenu" type="CanvasLayer" parent="." unique_id=362173156 node_paths=PackedStringArray("manager")]
+script = ExtResource("2_7ije6")
+manager = NodePath("../MatchManager")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1426996834]
+zoom = Vector2(0.6, 0.6)
+
+[node name="Player" parent="." unique_id=1241627939 instance=ExtResource("3_y3eto")]
+position = Vector2(-656, -392)
+
+[node name="Player2" parent="." unique_id=166095077 instance=ExtResource("3_y3eto")]
+position = Vector2(-856, -368)
+
+[node name="Player3" parent="." unique_id=1471082405 instance=ExtResource("3_y3eto")]
+position = Vector2(-704, -280)
+
+[node name="Player4" parent="." unique_id=1544597435 instance=ExtResource("3_y3eto")]
+position = Vector2(-632, -480)
+
+[node name="Player5" parent="." unique_id=724059892 instance=ExtResource("3_y3eto")]
+position = Vector2(856, 0)
+
+[node name="Player6" parent="." unique_id=1294506809 instance=ExtResource("3_y3eto")]
+position = Vector2(768, -128)
+
+[node name="Player7" parent="." unique_id=1750265289 instance=ExtResource("3_y3eto")]
+position = Vector2(704, -64)
+
+[node name="Player8" parent="." unique_id=51643661 instance=ExtResource("3_y3eto")]
+position = Vector2(968, -528)
+team = 1
+
+[node name="Player9" parent="." unique_id=680462510 instance=ExtResource("3_y3eto")]
+position = Vector2(928, -528)
+team = 1
+
+[node name="Player10" parent="." unique_id=800523095 instance=ExtResource("3_y3eto")]
+position = Vector2(888, -528)
+team = 1
+
+[node name="Player11" parent="." unique_id=278626141 instance=ExtResource("3_y3eto")]
+position = Vector2(848, -528)
+team = 1
+
+[node name="Player12" parent="." unique_id=1231334177 instance=ExtResource("3_y3eto")]
+position = Vector2(608, -408)
+team = 1
+
+[node name="Player13" parent="." unique_id=446724474 instance=ExtResource("3_y3eto")]
+position = Vector2(768, -528)
+team = 1
+
+[node name="Player14" parent="." unique_id=1316463404 instance=ExtResource("3_y3eto")]
+position = Vector2(728, -528)
+team = 1
