@@ -25,6 +25,7 @@ enum KickType { NONE, GROUND, VOLLEY, FLYING, HIGH_BALL }
 		queue_redraw()
 @export var move_speed: float = 300.0
 @export var run_duration: float = 1.5
+@export var max_runs_per_turn: int = 2          # quantas vezes o Correr pode ser usado por turno
 @export var skill_name: String = "Habilidade"
 ## Nome mostrado no jogo (placar de gols, menu...). Vazio = usa o nome do nó.
 @export var display_name: String = ""
@@ -36,6 +37,7 @@ enum KickType { NONE, GROUND, VOLLEY, FLYING, HIGH_BALL }
 @export_group("Carrinho")
 @export var slide_distance: float = 220.0      # quanto o jogador desliza
 @export var slide_duration: float = 0.4
+@export var max_slides_per_turn: int = 1        # quantas vezes o Carrinho pode ser usado por turno
 @export var slide_hit_radius: float = 55.0     # "próximo": raio que acerta inimigos e bola
 @export var slide_ball_power: float = 800.0
 
@@ -45,10 +47,10 @@ enum KickType { NONE, GROUND, VOLLEY, FLYING, HIGH_BALL }
 @export_group("Chutar")
 @export var kick_range: float = 70.0            # distância (no chão) máxima até a bola
 @export var kick_aim_range: float = 120.0       # tamanho da seta de mira
-@export var kick_force_ground: float = 50.0     # chute fraco (jogador e bola no chão)
-@export var kick_force_volley: float = 60.0     # voleio (jogador suspenso, bola no chão/suspensa)
-@export var kick_force_flying: float = 70.0     # bola voando (QTE mais difícil)
-@export var kick_force_high_ball: float = 50.0  # jogador no chão, bola suspensa (QTE)
+@export var kick_force_ground: float = 100.0     # chute fraco (jogador e bola no chão)
+@export var kick_force_volley: float = 120.0     # voleio (jogador suspenso, bola no chão/suspensa)
+@export var kick_force_flying: float = 140.0     # bola voando (QTE mais difícil)
+@export var kick_force_high_ball: float = 100.0  # jogador no chão, bola suspensa (QTE)
 @export var kick_force_to_speed: float = 10.0   # força 50 -> 500 px/s na bola
 @export var volley_peak_level: Heights.Level = Heights.Level.SUSPENDED   # até onde a bola sobe no voleio
 @export var flying_peak_level: Heights.Level = Heights.Level.SUSPENDED   # idem, quando a bola estava voando
@@ -76,8 +78,9 @@ var character_id: String = "base"
 
 var state: State = State.IDLE
 var run_time_left: float = 0.0
-## Já usou Correr neste turno? (o MatchManager zera no começo do turno do time)
-var has_run_this_turn: bool = false
+## Quantas vezes já usou Correr / Carrinho neste turno (o MatchManager zera no começo do turno do time)
+var runs_this_turn: int = 0
+var slides_this_turn: int = 0
 ## Rodadas que o jogador já passou derrubado (o MatchManager o levanta sozinho depois de 2)
 var rounds_down: int = 0
 
@@ -237,7 +240,7 @@ func _finish_aim(direction: Vector2) -> void:
 
 ## Move livremente com WASD por run_duration segundos
 func start_run() -> void:
-	has_run_this_turn = true
+	runs_this_turn += 1
 	run_time_left = run_duration
 	state = State.RUNNING
 
@@ -279,6 +282,7 @@ func land() -> void:
 # ---------- AÇÃO GERAL: CARRINHO ----------
 
 func start_slide(direction: Vector2) -> void:
+	slides_this_turn += 1
 	slide_dir = direction.normalized()
 	slide_time_left = slide_duration
 	_slide_hit_players.clear()
@@ -386,7 +390,7 @@ func get_shot_chance(kind: KickType) -> float:
 ## Aplica o chute na bola. qte_success = false enfraquece e desvia o chute.
 ## chance_override >= 0 troca a chance padrão do tipo de chute (habilidades usam isso).
 func kick_ball(ball: Ball, direction: Vector2, kind: KickType, qte_success: bool = true,
-		chance_override: float = -1.0) -> void:
+		chance_override: float = -1.0, ignore_self_collision: bool = false) -> void:
 	var force: float = kick_force_ground
 	match kind:
 		KickType.VOLLEY:
@@ -410,6 +414,10 @@ func kick_ball(ball: Ball, direction: Vector2, kind: KickType, qte_success: bool
 		var peak_level: Heights.Level = volley_peak_level if kind == KickType.VOLLEY else flying_peak_level
 		var rise: float = maxf(0.0, Heights.to_height(peak_level) - ball.height)
 		ball.kick(dir, speed, Heights.lift_for_peak(rise, ball.gravity), self, chance)
+
+	# Habilidades como o Backheel Shot: a bola passa direto por quem chutou
+	if ignore_self_collision:
+		ball.ignore_player_until_stopped(self)
 
 	await get_tree().create_timer(0.15).timeout
 
@@ -468,7 +476,8 @@ func reset_for_new_match() -> void:
 	height_level = Heights.Level.GROUND
 	height = Heights.GROUND_HEIGHT
 	get_up_now()
-	has_run_this_turn = false
+	runs_this_turn = 0
+	slides_this_turn = 0
 	role = Role.NONE
 	is_active = false
 	range_preview = 0.0

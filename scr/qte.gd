@@ -12,13 +12,23 @@ extends CanvasLayer
 signal finished(success: bool)
 
 const EASY_KEYS: Array[int] = [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT]
-const HARD_KEYS: Array[int] = [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_SPACE, KEY_Z, KEY_X]
+const HARD_KEYS: Array[int] = [KEY_UP, KEY_DOWN, KEY_LEFT, KEY_RIGHT, KEY_SPACE, KEY_Q, KEY_E]
 
-const ARROW_LABELS := {
-	KEY_UP: "↑",
-	KEY_DOWN: "↓",
-	KEY_LEFT: "←",
-	KEY_RIGHT: "→",
+## WASD vale como as setas: a sequência é sorteada com as setas, mas o jogador
+## pode apertar a seta OU a letra equivalente.
+const WASD_ALIASES := {
+	KEY_W: KEY_UP,
+	KEY_S: KEY_DOWN,
+	KEY_A: KEY_LEFT,
+	KEY_D: KEY_RIGHT,
+}
+
+## Texto mostrado na tela para cada tecla que tem equivalente em WASD
+const KEY_LABELS := {
+	KEY_UP: "Up/W",
+	KEY_DOWN: "Down/S",
+	KEY_LEFT: "Left/A",
+	KEY_RIGHT: "Right/D",
 }
 
 const START_DELAY: float = 0.6      # "prepare-se" antes da primeira tecla
@@ -118,8 +128,8 @@ func _build_ui(title: String) -> void:
 
 
 func _key_text(key: int) -> String:
-	if ARROW_LABELS.has(key):
-		return ARROW_LABELS[key]
+	if KEY_LABELS.has(key):
+		return KEY_LABELS[key]
 	return OS.get_keycode_string(key as Key)
 
 
@@ -166,7 +176,9 @@ func _input(event: InputEvent) -> void:
 		return
 
 	get_viewport().set_input_as_handled()
-	if event.keycode == _sequence[_index]:
+	# W/A/S/D contam como cima/esquerda/baixo/direita
+	var pressed: int = WASD_ALIASES.get(event.keycode, event.keycode)
+	if pressed == _sequence[_index]:
 		_index += 1
 		_highlight()
 		if _index >= _sequence.size():

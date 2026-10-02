@@ -58,50 +58,50 @@ manager = NodePath("../MatchManager")
 zoom = Vector2(0.6, 0.6)
 
 [node name="Player" parent="." unique_id=1241627939 instance=ExtResource("3_y3eto")]
-position = Vector2(-1408, -576)
-
-[node name="Player2" parent="." unique_id=365574374 instance=ExtResource("3_y3eto")]
-position = Vector2(-1408, -512)
-
-[node name="Player3" parent="." unique_id=1642932708 instance=ExtResource("3_y3eto")]
-position = Vector2(-1408, -448)
-
-[node name="Player4" parent="." unique_id=1052463267 instance=ExtResource("3_y3eto")]
-position = Vector2(-1408, -384)
-
-[node name="Player5" parent="." unique_id=144135552 instance=ExtResource("3_y3eto")]
-position = Vector2(-1408, -320)
-
-[node name="Player6" parent="." unique_id=777035109 instance=ExtResource("3_y3eto")]
-position = Vector2(-1408, -256)
-
-[node name="Player7" parent="." unique_id=1713742106 instance=ExtResource("3_y3eto")]
 position = Vector2(-1408, -192)
 
+[node name="Player2" parent="." unique_id=365574374 instance=ExtResource("3_y3eto")]
+position = Vector2(-1408, -128)
+
+[node name="Player3" parent="." unique_id=1642932708 instance=ExtResource("3_y3eto")]
+position = Vector2(-1408, -64)
+
+[node name="Player4" parent="." unique_id=1052463267 instance=ExtResource("3_y3eto")]
+position = Vector2(-1408, 0)
+
+[node name="Player5" parent="." unique_id=144135552 instance=ExtResource("3_y3eto")]
+position = Vector2(-1408, 64)
+
+[node name="Player6" parent="." unique_id=777035109 instance=ExtResource("3_y3eto")]
+position = Vector2(-1408, 128)
+
+[node name="Player7" parent="." unique_id=1713742106 instance=ExtResource("3_y3eto")]
+position = Vector2(-1408, 192)
+
 [node name="Player8" parent="." unique_id=1720258962 instance=ExtResource("3_y3eto")]
-position = Vector2(1408, -576)
+position = Vector2(1408, -192)
 team = 1
 
 [node name="Player9" parent="." unique_id=838970359 instance=ExtResource("3_y3eto")]
-position = Vector2(1408, -512)
+position = Vector2(1408, -128)
 team = 1
 
 [node name="Player10" parent="." unique_id=495205438 instance=ExtResource("3_y3eto")]
-position = Vector2(1408, -448)
+position = Vector2(1408, -64)
 team = 1
 
 [node name="Player11" parent="." unique_id=71110511 instance=ExtResource("3_y3eto")]
-position = Vector2(1408, -384)
+position = Vector2(1408, 0)
 team = 1
 
 [node name="Player12" parent="." unique_id=1171416633 instance=ExtResource("3_y3eto")]
-position = Vector2(1408, -320)
+position = Vector2(1408, 64)
 team = 1
 
 [node name="Player13" parent="." unique_id=1882428437 instance=ExtResource("3_y3eto")]
-position = Vector2(1408, -256)
+position = Vector2(1408, 128)
 team = 1
 
 [node name="Player14" parent="." unique_id=300146593 instance=ExtResource("3_y3eto")]
-position = Vector2(1408, -192)
+position = Vector2(1408, 192)
 team = 1

@@ -68,11 +68,11 @@ const PASS_VARIANT_NAMES := {
 @export var reposition_time: float = 0.8              # quanto tempo os jogadores levam para voltar (0 = na hora)
 
 @export_group("Ações do Protagonista")
-@export var protagonist_general_actions: int = 2
+@export var protagonist_general_actions: int = 3
 @export var protagonist_skill_actions: int = 1
 
 @export_group("Ações dos Secundários (divididas pelo time)")
-@export var secondary_general_actions: int = 1
+@export var secondary_general_actions: int = 2
 @export var secondary_skill_actions: int = 1
 
 @export_group("Chutar - QTE")
@@ -82,8 +82,8 @@ const PASS_VARIANT_NAMES := {
 @export var flying_qte_time_per_key: float = 0.6      # ...menos tempo (e teclas extras no pool)
 
 @export_group("Passe")
-@export var ground_pass_range: float = 400.0           # alcance do passe rasteiro (px)
-@export var high_pass_range: float = 500.0             # alcance do passe alto (um pouco maior)
+@export var ground_pass_range: float = 450.0           # alcance do passe rasteiro (px)
+@export var high_pass_range: float = 550.0             # alcance do passe alto (um pouco maior)
 @export var ground_pass_speed: float = 700.0           # velocidade do passe rasteiro (px/s)
 @export var ground_pass_intercept_radius: float = 30.0 # inimigo a esta distância da bola intercepta
 @export var high_pass_flight_time: float = 0.9         # tempo da bola até subir ao nível Voando
@@ -259,7 +259,8 @@ func _begin_turn() -> void:
 	# (= o pulo dura uma rodada inteira, inclusive o turno do adversário)
 	for p in get_team_players(current_team):
 		p.land()
-		p.has_run_this_turn = false
+		p.runs_this_turn = 0
+		p.slides_this_turn = 0
 
 	_update_pass_on_turn_start()
 
@@ -397,11 +398,14 @@ func can_use_general(action: GeneralAction) -> bool:
 		return false
 
 	match action:
-		# Correr: só no chão e uma vez por turno
+		# Correr: só no chão e até 2 vezes por turno
 		GeneralAction.RUN:
-			return p.height_level == Heights.Level.GROUND and not p.has_run_this_turn
-		# Pular e Carrinho só a partir do chão
-		GeneralAction.JUMP, GeneralAction.SLIDE:
+			return p.height_level == Heights.Level.GROUND and p.runs_this_turn < p.max_runs_per_turn
+		# Carrinho: só no chão e apenas 1 vez por turno
+		GeneralAction.SLIDE:
+			return p.height_level == Heights.Level.GROUND and p.slides_this_turn < p.max_slides_per_turn
+		# Pular só a partir do chão
+		GeneralAction.JUMP:
 			return p.height_level == Heights.Level.GROUND
 		# Chutar: precisa haver um chute possível (perto da bola, altura alcançável)
 		GeneralAction.SHOOT:

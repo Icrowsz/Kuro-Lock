@@ -297,7 +297,8 @@ func _use_shot_skill() -> bool:
 		qte_ok = await m.run_qte(qte_kind)
 
 	var chance: float = minf(base_chance + _shot_bonus(), 1.0)
-	await kick_ball(ball, dir, kind, qte_ok, chance)
+	# Backheel Shot: a bola ignora a colisão do próprio Isagi
+	await kick_ball(ball, dir, kind, qte_ok, chance, variant == ShotVariant.BACKHEEL)
 	return true
 
 

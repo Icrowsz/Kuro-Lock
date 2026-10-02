@@ -133,8 +133,8 @@ func _refresh() -> void:
 			var status: String = "Altura: %s" % Heights.level_name(p.height_level)
 			if p.is_down:
 				status += " | DERRUBADO (só pode Levantar)"
-			if p.has_run_this_turn:
-				status += " | já correu neste turno"
+			status += " | Correr %d/%d | Carrinho %d/%d" % [
+				p.runs_this_turn, p.max_runs_per_turn, p.slides_this_turn, p.max_slides_per_turn]
 			info_label.text = "Agindo: %s (%s) — %s\nProtagonista — gerais: %d | habilidade: %d\nSecundários — gerais: %d | habilidade: %d\nClique em um companheiro de time para trocar quem age" % [
 				p.get_display_name(), role_text, status,
 				manager.protagonist_general_left, manager.protagonist_skill_left,

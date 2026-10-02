@@ -55,6 +55,10 @@ var _hover_tween: Tween
 var collisions_paused: bool = false
 ## Quem acabou de chutar a bola não colide com ela até ela se afastar
 var _ignore_player: Node2D = null
+## Jogador que a bola ignora por completo até ela parar (ex: Backheel Shot do Isagi,
+## em que a bola atravessa o próprio chutador). Diferente do _ignore_player, não
+## volta a colidir só porque a bola se afastou.
+var _sticky_ignore_player: Node2D = null
 
 ## Os dois últimos jogadores DIFERENTES a interagirem com a bola (chute, passe,
 ## carrinho ou contato físico). Usados para saber quem fez o gol e a assistência.
@@ -163,6 +167,11 @@ func _collide_with_players() -> void:
 
 
 func _is_ignored(p: Node2D) -> bool:
+	if p == _sticky_ignore_player:
+		if velocity.length() <= stop_speed + 1.0:
+			_sticky_ignore_player = null   # a bola parou: volta a colidir normalmente
+			return false
+		return true
 	if p != _ignore_player:
 		return false
 	if global_position.distance_to(p.global_position) > collision_radius + p.body_radius + 6.0:
@@ -224,6 +233,7 @@ func is_on_ground() -> bool:
 func reset(global_pos: Vector2) -> void:
 	release_hover()
 	_ignore_player = null
+	_sticky_ignore_player = null
 	clear_touches()
 	pending_shot_chance = NO_SHOT
 	global_position = global_pos
@@ -236,6 +246,8 @@ func reset(global_pos: Vector2) -> void:
 ## Registra que um jogador interagiu com a bola (repetir o mesmo jogador não muda nada)
 func register_touch(p: Player) -> void:
 	interaction_count += 1
+	if p != _sticky_ignore_player:
+		_sticky_ignore_player = null   # outro jogador tocou na bola: acabou a exceção
 	if p == null or p == last_toucher:
 		return
 	previous_toucher = last_toucher
@@ -276,12 +288,19 @@ func _set_shot(by: Node2D, chance: float) -> void:
 	shot_team = (by as Player).team if by is Player else -1
 
 
+## A bola atravessa este jogador (sem colidir) até parar ou outro jogador tocar nela.
+## Chame DEPOIS do kick()/kick_ground(), que limpam essa exceção.
+func ignore_player_until_stopped(p: Node2D) -> void:
+	_sticky_ignore_player = p
+
+
 ## Passe/chute rasteiro (by = quem chutou: não colide com a bola até ela se afastar).
 ## shot_chance = chance de o chute vencer o goleiro (padrão 30%). Passes devem usar NO_SHOT.
 func kick_ground(direction: Vector2, power: float, by: Node2D = null,
 		shot_chance: float = DEFAULT_SHOT_CHANCE) -> void:
 	release_hover()
 	_ignore_player = by
+	_sticky_ignore_player = null
 	register_touch(by as Player)
 	_set_shot(by, shot_chance)
 	velocity = direction.normalized() * power
@@ -294,6 +313,7 @@ func kick(direction: Vector2, power: float, lift: float, by: Node2D = null,
 		shot_chance: float = DEFAULT_SHOT_CHANCE) -> void:
 	release_hover()
 	_ignore_player = by
+	_sticky_ignore_player = null
 	register_touch(by as Player)
 	_set_shot(by, shot_chance)
 	velocity = direction.normalized() * power
