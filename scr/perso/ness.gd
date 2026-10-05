@@ -74,7 +74,7 @@ enum SpellVariant { NONE, ALOHOMORA, DEPULSO, EXPELLIARMUS }
 @export var reparo_rounds: int = 1                   # quantas rodadas cada uma perde de recarga
 
 @export_group("Leviosa / Descendo / Arresto Momentum")
-@export var spell_cooldown: int = 3                  # recarga das 3 (compartilhada)
+@export var spell_cooldown: int = 1                 # recarga das 3 (compartilhada)
 ## Distância máxima de Ness até a bola para lançar estes feitiços. 0 = sem limite
 @export var ball_spell_range: float = 400.0
 @export var spell_time: float = 0.35                 # tempo da bola subindo/descendo de nível

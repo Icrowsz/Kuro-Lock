@@ -111,14 +111,12 @@ func _ready() -> void:
 	add_to_group("control_sources")
 	_hook_manager.call_deferred()
 
-
-## Roxo/magenta "trapaceiro"; as partículas sobem em espiral
 func _make_kick_fx() -> KickFX:
 	var fx := KickFX.new()
-	fx.color = Color(0.85, 0.2, 0.85)
+	fx.color = Color(0.768, 0.568, 0.074, 1.0)
 	fx.trail_width = 14.0
 	fx.shape = KickFX.Shape.SQUARE
-	fx.particle_color = Color(1.0, 0.75, 0.95)
+	fx.particle_color = Color(0.965, 0.82, 0.345, 1.0)
 	fx.amount = 20
 	fx.lifetime = 0.5
 	fx.speed_min = 15.0

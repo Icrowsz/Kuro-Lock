@@ -49,7 +49,7 @@ const CD_WALL: StringName = &"cd_wall"
 @export var lunge_cooldown: int = 3             # recarga, contada a partir do FIM do efeito (as 2 variantes compartilham)
 
 @export_group("Viper Tackle")
-@export var viper_aim_range: float = 90.0        # tamanho da seta de mira (direção do bote)
+@export var viper_aim_range: float = 200.0        # tamanho da seta de mira (direção do bote)
 @export var viper_distance: float = 250.0        # bem mais longe que o Carrinho normal
 @export var viper_duration: float = 0.65
 @export var viper_hit_radius: float = 60.0       # alcance para derrubar inimigos e "encontrar" a bola

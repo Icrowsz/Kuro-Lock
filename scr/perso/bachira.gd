@@ -5,8 +5,9 @@ extends Player
 ## 1. Bon! (ação de habilidade, com 2 variantes automáticas pela altura; recarga de 2 rodadas,
 ##      compartilhada):
 ##      - Bachira e bola NÃO os dois suspensos (e a bola ao alcance) -> Bon!: chute que põe a
-##          bola no nível Voando antes de ela cair de novo (30%). Sem QTE com a bola no chão;
-##          se a bola estiver mais alta, o QTE é o do chute comum daquela situação.
+##          bola no nível Voando antes de ela cair de novo (30%). A bola QUICA SÓ UMA VEZ
+##          (bon_max_bounces) e o chute sai mais forte (bon_force_mult). Sem QTE com a bola no
+##          chão; se a bola estiver mais alta, o QTE é o do chute comum daquela situação.
 ##      - Bachira e bola os dois suspensos -> Bee Shot: voleio SEM QTE (40%).
 ##
 ## 2. Step Overs (ação de habilidade; recarga de 3 rodadas): com Bachira e a bola no chão, ele
@@ -49,6 +50,9 @@ enum ShotVariant { NONE, BON, BEE }
 @export_range(0.0, 1.0) var chance_bon: float = 0.30
 @export_range(0.0, 1.0) var chance_bee: float = 0.40
 @export var bon_peak_level: Heights.Level = Heights.Level.FLYING   # até onde a bola sobe no Bon!
+@export var bon_max_bounces: int = 1                                # quantas vezes a bola quica depois do Bon! (-1 = sem limite)
+## Multiplicador da força do chute no Bon! (1.0 = força normal do voleio). Não vale para o Bee Shot.
+@export_range(0.5, 3.0, 0.05) var bon_force_mult: float = 0.55
 @export var shot_cooldown: int = 2                                  # igual para as 2 variantes
 
 @export_group("Step Overs")
@@ -198,10 +202,17 @@ func _use_shot_skill() -> bool:
 	var previous_peak: Heights.Level = volley_peak_level
 	if variant == ShotVariant.BON:
 		volley_peak_level = bon_peak_level
+		# Chute mais forte (o kick_ball gasta este multiplicador logo no começo)
+		next_kick_force_mult *= bon_force_mult
 	# Errou o QTE = chute fraquinho, sem aura
 	await kick_ball(ball, aim, KickType.VOLLEY, qte_ok, chance, false,
 		kick_fx if qte_ok else null, anim)
 	volley_peak_level = previous_peak
+
+	# Bon!: a bola quica só bon_max_bounces vez(es). O kick() acabou de zerar o limite, então
+	# é agora que ele entra (a bola ainda está subindo: o 1º quique só vem bem depois).
+	if variant == ShotVariant.BON and ball != null and not ball.hovering:
+		ball.bounces_left = bon_max_bounces
 
 	start_cooldown(CD_SHOT, shot_cooldown)
 	return true

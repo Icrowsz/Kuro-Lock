@@ -1,0 +1,39 @@
+[gd_scene format=3 uid="uid://d0ky0op878kaj"]
+
+[ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_vy58h"]
+[ext_resource type="Script" uid="uid://x7dey66gb5hl" path="res://scr/perso/zantetsu.gd" id="2_e0om6"]
+[ext_resource type="Texture2D" uid="uid://bxnfntil3u51d" path="res://img/zantetsuicon.png" id="2_xrcm0"]
+
+[node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_vy58h")]
+script = ExtResource("2_e0om6")
+train_distance = 330.0
+train_duration = 0.35
+a_train_distance = 170.0
+a_train_duration = 0.25
+train_cooldown = 2
+stop_on_enemy_contact = true
+contact_margin = 8.0
+rails_length_ratio = 0.6
+rails_thickness = 125.0
+rails_rounds = 2
+rails_stun_rounds = 1
+rails_cooldown = 3
+rails_run_speed_mult = 2.3
+chance_lefty = 0.3
+chance_idiot_volley = 0.3
+rails_shot_bonus = 0.05
+kick_cooldown = 2
+curve_total_degrees = 25.0
+curve_duration = 0.8
+curve_to_left = true
+volley_dash_distance = 150.0
+volley_dash_duration = 0.3
+volley_catch_radius = 60.0
+idiot_volley_qte = false
+kick_fx = null
+display_name = "Zantetsu Tsurugi"
+visual_root = NodePath("SprPlayer")
+
+[node name="SprPlayer" parent="." index="1" unique_id=395354675]
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("2_xrcm0")

@@ -43,7 +43,7 @@ const TOWER_COLOR := Color(0.3, 1.0, 0.5)
 @export var body_core_approach_time: float = 0.45
 
 @export_group("Tactical")
-@export var tactical_range: float = 550.0
+@export var tactical_range: float = 475.0
 @export var tactical_cooldown: int = 2
 ## Quanto a bola se desvia da reta, como fração da distância do passe (0.25 = 25%)
 @export_range(0.0, 0.6) var tactical_curve: float = 0.25

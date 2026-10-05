@@ -712,6 +712,16 @@ func is_on_cooldown(group: StringName) -> bool:
 	return cooldown_rounds_left(group) > 0
 
 
+## Foto das recargas e devolução dela. O MatchManager usa quando uma habilidade é cancelada
+## (Esc / clique direito na mira) para a recarga que ela tenha iniciado não ficar valendo.
+func snapshot_cooldowns() -> Dictionary:
+	return _cooldown_ready.duplicate()
+
+
+func restore_cooldowns(snapshot: Dictionary) -> void:
+	_cooldown_ready = snapshot.duplicate()
+
+
 ## Começa a recarga de um grupo de habilidades (as variantes de uma habilidade usam o mesmo grupo).
 ## A contagem começa em from_round (padrão: a rodada atual) e dura "rounds" rodadas:
 ## usou na rodada 5 com recarga 2 -> volta na rodada 7.

@@ -46,6 +46,11 @@ var height: float = 0.0
 var vel_z: float = 0.0
 var velocity: Vector2 = Vector2.ZERO
 
+## Quantos quiques ainda são permitidos neste voo (-1 = sem limite, o normal). Habilidades como o
+## Bon! do Bachira põem 1: a bola quica UMA vez e na segunda queda já fica rolando. O valor
+## volta sozinho para -1 quando a bola para de quicar, é chutada, segurada ou reposta.
+var bounces_left: int = -1
+
 ## Bola "pairando": a física (gravidade/atrito) fica desligada e quem controla
 ## é o hover_to (ex: passe alto). Qualquer chute ou reset solta a bola.
 var hovering: bool = false
@@ -135,12 +140,15 @@ func _apply_vertical(delta: float) -> void:
 		if height <= 0.0:
 			height = 0.0
 			var impact: float = absf(vel_z)
-			if impact > min_bounce_speed:
+			if impact > min_bounce_speed and bounces_left != 0:
 				vel_z = -vel_z * bounce_factor
 				velocity *= 0.9  # perde um pouco de velocidade horizontal ao quicar
+				if bounces_left > 0:
+					bounces_left -= 1
 				bounced.emit(impact)
 			else:
 				vel_z = 0.0
+				bounces_left = -1   # acabou o voo: o limite não vale para o próximo
 
 
 ## Rastro: guarda onde a bola esteve nos últimos frames; desligado, ele vai sumindo
@@ -508,6 +516,7 @@ func _on_hover_tween_finished() -> void:
 ## Solta a bola pairando: a gravidade volta e ela cai (e quica) até o chão
 func release_hover() -> void:
 	hovering = false
+	bounces_left = -1   # todo chute/solta começa sem limite de quiques (quem quiser limita DEPOIS)
 	held_by = null
 	spell_owner = null
 	_kill_hover_tween()

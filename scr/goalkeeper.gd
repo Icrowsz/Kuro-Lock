@@ -27,7 +27,7 @@ enum State { IDLE, PREPARING, DIVING, HOLDING, THROWING }
 @export var team: int = 0
 
 @export_group("Preparo e lançamento")
-@export var prepare_rounds: int = 1            # rodadas de preparo (antes de saltar e antes de lançar)
+@export var prepare_rounds: int = 0           # rodadas de preparo (antes de saltar e antes de lançar)
 @export var throw_range: float = 900.0         # alcance do lançamento (px)
 @export var throw_speed: float = 700.0         # velocidade da bola no ar (px/s)
 @export var throw_rise_time: float = 0.2       # tempo para a bola subir ao nível Voando

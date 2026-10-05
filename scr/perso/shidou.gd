@@ -53,12 +53,12 @@ enum ShotVariant { NONE, KABLAMO, DRAGON, BIG_BANG }
 @export var big_bang_shake: float = 6.0                  # tremor da câmera no impacto (px; 0 = sem tremor)
 
 @export_group("Demonic Rush / Draconic Header")
-@export var rush_speed_mult: float = 1.8                 # quantas vezes mais veloz que o Correr normal
+@export var rush_speed_mult: float = 1.4                  # quantas vezes mais veloz que o Correr normal
 @export_range(0.0, 1.0) var chance_header: float = 0.40
 @export var rush_cooldown: int = 2                       # recarga compartilhada com o Draconic Header
 
 @export_group("Obsessive Lover / Hater")
-@export var obsessive_rounds: int = 3                    # duração total em rodadas (contando a atual)
+@export var obsessive_rounds: int = 2                    # duração total em rodadas (contando a atual)
 @export var obsessive_cooldown: int = 2                  # recarga compartilhada
 @export_range(0.0, 1.0) var lover_pass_bonus: float = 0.05   # +5% nos chutes que vêm de passe do amigo
 @export var lover_extra_skill_actions: int = 1           # ações de habilidade extras do amigo (por turno)

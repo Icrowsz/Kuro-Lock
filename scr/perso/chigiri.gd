@@ -67,7 +67,7 @@ enum MiauVariant { NONE, MIAU, RED_PRINCESS }
 
 @export_group("Golden Zone / 44 Pant")
 @export var golden_zone_rounds: int = 2
-@export var golden_zone_cooldown: int = 2
+@export var golden_zone_cooldown: int = 0
 @export var golden_zone_radius: float = 70.0
 ## O quanto o centro do círculo fica empurrado para FORA da caixa, a partir do canto externo
 ## (quanto maior, mais longe do canto — "mais à esquerda e mais embaixo" ao mesmo tempo, já
@@ -80,17 +80,17 @@ enum MiauVariant { NONE, MIAU, RED_PRINCESS }
 @export var golden_zone_flip_side: bool = false
 
 @export_group("Accelerate / Once More")
-@export var accelerate_mult: float = 1.7
+@export var accelerate_mult: float = 1.3
 @export var once_more_dash_range: float = 260.0     # avanço curto/médio
 @export var once_more_dash_time: float = 0.3
 @export var once_more_cooldown: int = 3
 @export var once_more_extra_skills: int = 1
 
 @export_group("Miau! / Red Princess")
-@export var miau_slide_distance: float = 340.0      # o Carrinho comum (slide_distance) é mais curto
+@export var miau_slide_distance: float = 230.0      # o Carrinho comum (slide_distance) é mais curto
 @export var miau_slide_duration: float = 0.5
 @export var red_princess_range: float = 550.0       # alcance máximo do cruzamento
-@export var red_princess_min_range: float = 350.0   # o aliado tem que estar pelo menos este tanto longe
+@export var red_princess_min_range: float = 300.0   # o aliado tem que estar pelo menos este tanto longe
 @export var red_princess_rise_time: float = 0.5
 @export var red_princess_fall_time: float = 0.55
 @export var miau_cooldown: int = 3                  # não informado no pedido; ajuste se quiser outro valor
@@ -118,14 +118,12 @@ func _ready() -> void:
 		kick_fx = _make_kick_fx()
 	_hook_manager.call_deferred()
 
-
-## Dourado vivo; as partículas são "faíscas" rápidas, à altura da velocidade dele
 func _make_kick_fx() -> KickFX:
 	var fx := KickFX.new()
-	fx.color = Color(1.0, 0.8, 0.1)
+	fx.color = Color(1.0, 0.242, 0.216, 1.0)
 	fx.trail_width = 14.0
 	fx.shape = KickFX.Shape.SQUARE
-	fx.particle_color = Color(1.0, 0.92, 0.5)
+	fx.particle_color = Color(1.0, 0.401, 0.569, 1.0)
 	fx.amount = 20
 	fx.lifetime = 0.45
 	fx.speed_min = 40.0

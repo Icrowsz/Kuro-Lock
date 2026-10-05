@@ -41,20 +41,20 @@ const CD_ASSAULT: StringName = &"cd_assault"
 enum BiteVariant { NONE, BITE, ASSAULT }
 
 const SHARP_COLOR := Color(1.0, 0.45, 0.8)
-const ORBITAL_COLOR := Color(0.6, 0.45, 1.0)
+const ORBITAL_COLOR := Color(1.0, 0.237, 0.972, 1.0)
 
 @export_group("Sharp Sharp")
-@export var sharp_range: float = 450.0                           # alcance para escolher o aliado
+@export var sharp_range: float = 475.0                           # alcance para escolher o aliado
 @export_range(0.0, 1.0) var sharp_bonus_per_round: float = 0.03  # +3% por rodada de 1-2
 @export var sharp_touch_range: float = 80.0                      # "bola perto" de um dos dois
 @export var sharp_cooldown: int = 3                              # recarga, contada a partir do fim do efeito
 
 @export_group("Lie Lie")
-@export var lie_pass_range: float = 400.0                        # alcance do passe curto
+@export var lie_pass_range: float = 450.0                        # alcance do passe curto
 @export_range(0.0, 1.0) var lie_bonus_ratio: float = 0.5         # fração do bônus acumulado que o receptor ganha
 
 @export_group("Orbital Orbital")
-@export var orbital_range: float = 300.0                         # alcance para escolher o aliado
+@export var orbital_range: float = 330.0                         # alcance para escolher o aliado
 @export var orbital_chain_extra: float = 0.5                     # corrente = distância original x (1 + isto)
 @export var orbital_rounds: int = 3                              # duração total em rodadas (contando a atual)
 @export var orbital_cooldown: int = 3                            # recarga, contada a partir do fim do efeito
@@ -62,11 +62,11 @@ const ORBITAL_COLOR := Color(0.6, 0.45, 1.0)
 @export var orbital_run_bonus: float = 0.7                       # segundos a mais no Correr
 
 @export_group("Bite Bite")
-@export var bite_distance_mult: float = 1.3                      # carrinho x este valor
-@export var bite_pass_range: float = 300.0                       # alcance do passe até o aliado mais próximo
+@export var bite_distance_mult: float = 1.1                      # carrinho x este valor
+@export var bite_pass_range: float = 360.0                       # alcance do passe até o aliado mais próximo
 
 @export_group("Assault Assault")
-@export var assault_reach: float = 190.0                         # "bola próxima": até onde ele voa
+@export var assault_reach: float = 180.0                         # "bola próxima": até onde ele voa
 @export var assault_dash_time: float = 0.25                      # duração da investida
 @export var assault_cooldown: int = 2
 

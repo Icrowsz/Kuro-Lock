@@ -1003,6 +1003,11 @@ func can_use_skill(skill_id: StringName = &"default") -> bool:
 	return active_player.can_use_skill(skill_id)
 
 
+## A última mira / escolha de alvo / escolha de ponto de uma habilidade foi CANCELADA (Esc ou
+## clique direito)? Vale a ÚLTIMA escolha: se a habilidade pede duas e a segunda deu certo, volta a false.
+var _skill_pick_cancelled: bool = false
+
+
 ## Chamado pelos botões de habilidade do menu. A ação só é gasta se a habilidade
 ## foi realmente usada (cancelar a mira, por exemplo, não gasta nada).
 func do_skill_action(skill_id: StringName = &"default") -> void:
@@ -1011,8 +1016,17 @@ func do_skill_action(skill_id: StringName = &"default") -> void:
 
 	var actor: Player = active_player
 	var free: bool = actor.skill_is_free(skill_id)   # confere ANTES: usar a habilidade muda o estado
+	var cooldowns_before: Dictionary = actor.snapshot_cooldowns()
+	_skill_pick_cancelled = false
 	_set_phase(Phase.EXECUTING)
 	var used: bool = await actor.use_skill(skill_id)
+	# Rede de segurança: se o jogador cancelou a mira/escolha, a habilidade NÃO foi usada, mesmo que
+	# o script do personagem tenha devolvido true (ou já tenha iniciado a recarga) por engano
+	if _skill_pick_cancelled:
+		_skill_pick_cancelled = false
+		used = false
+		if is_instance_valid(actor):
+			actor.restore_cooldowns(cooldowns_before)
 	if not used:
 		_set_phase(Phase.CHOOSING_ACTION)
 		return
@@ -1027,6 +1041,7 @@ func aim_for_skill(actor: Player, range_px: float) -> Vector2:
 	_set_phase(Phase.AIMING)
 	actor.begin_aim(range_px)
 	var dir: Vector2 = await actor.aim_finished
+	_skill_pick_cancelled = (dir == Vector2.ZERO)
 	_set_phase(Phase.EXECUTING)
 	return dir
 
@@ -1056,6 +1071,7 @@ func pick_ally_for_skill(actor: Player, range_px: float, enemies: bool = false,
 		other.is_pass_option = other != actor and team_ok and extra_ok \
 			and actor.global_position.distance_to(other.global_position) <= range_px
 	var target: Player = await skill_target_picked
+	_skill_pick_cancelled = (target == null)
 	_picking_skill_target = false
 	_skill_target_actor = null
 	_skill_target_filter = Callable()
@@ -1078,6 +1094,7 @@ func pick_point_for_skill(actor: Player, range_px: float) -> Vector2:
 	actor.range_preview = range_px
 	_spawn_skill_point_marker(actor.team)
 	var point: Vector2 = await skill_point_picked
+	_skill_pick_cancelled = (point == Vector2.INF)
 	_picking_skill_point = false
 	_skill_point_actor = null
 	actor.range_preview = 0.0
@@ -1336,6 +1353,8 @@ func _end_match(winning_team: int) -> void:
 	winner = winning_team
 	if _picking_skill_target:
 		skill_target_picked.emit(null)   # a habilidade que esperava um alvo termina sem efeito
+	if _picking_skill_point:
+		skill_point_picked.emit(Vector2.INF)   # idem para quem esperava um ponto do campo
 	_hide_pass_preview()
 	# Se alguém estava mirando, cancela (a ação em andamento termina sem efeito)
 	if active_player and active_player.is_aiming:

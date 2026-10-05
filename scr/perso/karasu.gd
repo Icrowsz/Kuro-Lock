@@ -58,7 +58,7 @@ enum WingsVariant { NONE, BLOCK, STEAL }
 @export var feint_rounds: int = 3                      # rodadas depois da atual, contadas a partir de quando o counter dispara
 @export var feint_run_bonus: float = 0.6               # segundos a mais no Correr do Karasu
 @export_range(0.0, 1.0) var feint_shot_bonus: float = 0.06   # +6% na chance de gol (dele e dos aliados próximos)
-@export var feint_ally_range: float = 300.0            # "aliados próximos": distância até o Karasu
+@export var feint_ally_range: float = 400.0            # "aliados próximos": distância até o Karasu
 @export var feint_extra_skills: int = 1                # ações de habilidade extras só dele
 @export var feint_stick_extra_rounds: int = 0          # rodadas que a bola continua grudada DEPOIS da rodada do counter
 
@@ -74,9 +74,9 @@ enum WingsVariant { NONE, BLOCK, STEAL }
 @export_group("Wings Block / Silent Steal")
 @export var wings_cooldown: int = 3
 @export var wings_rounds: int = 2                      # duração do bloqueio (contando a rodada atual)
-@export var wings_range: float = 150.0                 # alcance para agarrar; se o inimigo ficar mais longe que isso, solta
+@export var wings_range: float = 130.0                 # alcance para agarrar; se o inimigo ficar mais longe que isso, solta
 @export var wings_max_targets: int = 2
-@export var steal_range: float = 150.0                 # Silent Steal: o quanto longe ele alcança a bola
+@export var steal_range: float = 180.0                 # Silent Steal: o quanto longe ele alcança a bola
 @export var steal_reach_time: float = 0.2
 @export var steal_descend_time: float = 0.4
 
@@ -119,7 +119,7 @@ func _make_kick_fx() -> KickFX:
 	fx.color = Color(0.5, 0.2, 0.85)
 	fx.trail_width = 14.0
 	fx.shape = KickFX.Shape.SQUARE
-	fx.particle_color = Color(0.8, 0.6, 1.0)
+	fx.particle_color = Color(0.497, 0.472, 1.0, 1.0)
 	fx.amount = 20
 	fx.lifetime = 0.5
 	fx.speed_min = 15.0
