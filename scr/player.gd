@@ -491,6 +491,12 @@ func get_kick_type(ball: Ball) -> KickType:
 
 
 ## Chance de o chute vencer o goleiro, conforme o tipo (habilidades de chute podem usar também)
+## Sobrescreva para permitir Correr fora do chão (ex: Once More do Chigiri, suspenso) ou
+## mudar o limite de usos por turno. Padrão: só no chão, até max_runs_per_turn vezes.
+func can_run() -> bool:
+	return height_level == Heights.Level.GROUND and runs_this_turn < max_runs_per_turn
+
+
 func get_shot_chance(kind: KickType) -> float:
 	match kind:
 		KickType.VOLLEY:

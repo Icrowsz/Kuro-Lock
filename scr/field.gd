@@ -304,6 +304,15 @@ func get_penalty_area_rect(team: int) -> Rect2:
 	return Rect2(x0, -penalty_area_size.y * 0.5, penalty_area_size.x, penalty_area_size.y)
 
 
+## Pequena área (área do gol) que o time DEFENDE (em coordenadas locais do campo)
+func get_goal_area_rect(team: int) -> Rect2:
+	var half: Vector2 = pitch_size * 0.5
+	var dir: int = -1 if team == 0 else 1
+	var gx: float = half.x * dir
+	var x0: float = gx if dir < 0 else gx - goal_area_size.x
+	return Rect2(x0, -goal_area_size.y * 0.5, goal_area_size.x, goal_area_size.y)
+
+
 ## Esta posição (global) está dentro da grande área defendida por esse time?
 func is_in_penalty_area(global_pos: Vector2, team: int) -> bool:
 	return get_penalty_area_rect(team).has_point(to_local(global_pos))

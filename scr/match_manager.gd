@@ -543,9 +543,10 @@ func can_use_general(action: GeneralAction) -> bool:
 		return false
 
 	match action:
-		# Correr: só no chão e até 2 vezes por turno
+		# Correr: por padrão só no chão e até 2 vezes por turno (ver can_run() no player.gd;
+		# o Once More do Chigiri libera Correr também suspenso)
 		GeneralAction.RUN:
-			return p.height_level == Heights.Level.GROUND and p.runs_this_turn < p.max_runs_per_turn
+			return p.can_run()
 		# Carrinho: só no chão e apenas 1 vez por turno
 		GeneralAction.SLIDE:
 			return p.height_level == Heights.Level.GROUND and p.slides_this_turn < p.max_slides_per_turn

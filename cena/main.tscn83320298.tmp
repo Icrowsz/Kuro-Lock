@@ -1,0 +1,132 @@
+[gd_scene format=3 uid="uid://vyuwdkpu5dcw"]
+
+[ext_resource type="Script" uid="uid://c0u5r7smsq811" path="res://scr/match_manager.gd" id="1_3tt73"]
+[ext_resource type="Script" uid="uid://ip8snkgmpblr" path="res://scr/field.gd" id="1_mk8v6"]
+[ext_resource type="Script" uid="uid://14n0b1oxcpd" path="res://scr/action_menu.gd" id="2_7ije6"]
+[ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="3_y3eto"]
+[ext_resource type="PackedScene" uid="uid://bcstqrdud6opd" path="res://cena/bola.tscn" id="4_mk8v6"]
+[ext_resource type="PackedScene" uid="uid://ca8psqe5br5br" path="res://cena/perso/chigiri.tscn" id="6_4fnda"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_g6c8f"]
+size = Vector2(144, 1344)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pnk5n"]
+size = Vector2(144, 1344)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_85mlr"]
+size = Vector2(2688, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_jb6vp"]
+size = Vector2(2688, 64)
+
+[node name="Main" type="Node2D" unique_id=1825738983]
+
+[node name="Barreiras" type="StaticBody2D" parent="." unique_id=1114693915]
+
+[node name="Direita" type="CollisionShape2D" parent="Barreiras" unique_id=1145458346]
+position = Vector2(1272, 0)
+shape = SubResource("RectangleShape2D_g6c8f")
+
+[node name="Esquerda" type="CollisionShape2D" parent="Barreiras" unique_id=2112981153]
+position = Vector2(-1272, 0)
+shape = SubResource("RectangleShape2D_pnk5n")
+
+[node name="Cima" type="CollisionShape2D" parent="Barreiras" unique_id=1451737163]
+position = Vector2(0, -704)
+shape = SubResource("RectangleShape2D_85mlr")
+
+[node name="Baixo" type="CollisionShape2D" parent="Barreiras" unique_id=1836806044]
+position = Vector2(0, 704)
+shape = SubResource("RectangleShape2D_jb6vp")
+
+[node name="Field" type="Node2D" parent="." unique_id=679632803 node_paths=PackedStringArray("ball")]
+script = ExtResource("1_mk8v6")
+ball = NodePath("../Bola")
+pitch_size = Vector2(2400, 1350)
+margin = 500.0
+
+[node name="MatchManager" type="Node2D" parent="." unique_id=1461380594]
+script = ExtResource("1_3tt73")
+goals_to_win = 10
+volley_qte_time_per_key = 0.8
+ground_pass_range = 350.0
+high_pass_range = 450.0
+
+[node name="Bola" parent="." unique_id=235203312 instance=ExtResource("4_mk8v6")]
+
+[node name="ActionMenu" type="CanvasLayer" parent="." unique_id=362173156 node_paths=PackedStringArray("manager")]
+script = ExtResource("2_7ije6")
+manager = NodePath("../MatchManager")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1426996834]
+zoom = Vector2(0.6, 0.6)
+
+[node name="Player" parent="." unique_id=1241627939 instance=ExtResource("3_y3eto")]
+position = Vector2(-1408, -192)
+
+[node name="Player2" parent="." unique_id=365574374 instance=ExtResource("3_y3eto")]
+position = Vector2(-1408, -128)
+
+[node name="Player3" parent="." unique_id=1642932708 instance=ExtResource("3_y3eto")]
+position = Vector2(-1408, -64)
+
+[node name="Player4" parent="." unique_id=1052463267 instance=ExtResource("3_y3eto")]
+position = Vector2(-1408, 0)
+
+[node name="Player5" parent="." unique_id=144135552 instance=ExtResource("3_y3eto")]
+position = Vector2(-1408, 64)
+
+[node name="Player6" parent="." unique_id=777035109 instance=ExtResource("3_y3eto")]
+position = Vector2(-1408, 128)
+
+[node name="Player7" parent="." unique_id=1713742106 instance=ExtResource("3_y3eto")]
+position = Vector2(-1408, 192)
+
+[node name="Player8" parent="." unique_id=1720258962 instance=ExtResource("3_y3eto")]
+position = Vector2(1408, -192)
+team = 1
+
+[node name="Player9" parent="." unique_id=838970359 instance=ExtResource("3_y3eto")]
+position = Vector2(1408, -128)
+team = 1
+
+[node name="Player10" parent="." unique_id=495205438 instance=ExtResource("3_y3eto")]
+position = Vector2(1408, -64)
+team = 1
+
+[node name="Player11" parent="." unique_id=71110511 instance=ExtResource("3_y3eto")]
+position = Vector2(1408, 0)
+team = 1
+
+[node name="Player12" parent="." unique_id=1171416633 instance=ExtResource("3_y3eto")]
+position = Vector2(1408, 64)
+team = 1
+
+[node name="Player13" parent="." unique_id=1882428437 instance=ExtResource("3_y3eto")]
+position = Vector2(1408, 128)
+team = 1
+
+[node name="Player14" parent="." unique_id=300146593 instance=ExtResource("3_y3eto")]
+position = Vector2(1408, 192)
+team = 1
+
+[node name="Player15" parent="." unique_id=674265128 instance=ExtResource("6_4fnda")]
+position = Vector2(-240, 152)
+golden_zone_rounds = 2
+golden_zone_cooldown = 2
+golden_zone_radius = 70.0
+chance_44_pant = 0.4
+golden_zone_flip_side = false
+accelerate_mult = 1.7
+once_more_dash_range = 260.0
+once_more_dash_time = 0.3
+once_more_cooldown = 3
+once_more_extra_skills = 1
+miau_slide_distance = 340.0
+miau_slide_duration = 0.5
+red_princess_range = 550.0
+red_princess_min_range = 350.0
+red_princess_rise_time = 0.5
+red_princess_fall_time = 0.55
+miau_cooldown = 3
+kick_fx = null
