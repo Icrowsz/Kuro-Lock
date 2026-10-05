@@ -1,0 +1,31 @@
+[gd_scene format=3 uid="uid://cto7y84o6asn1"]
+
+[ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_oj453"]
+[ext_resource type="Texture2D" uid="uid://b8b6d85wtiw73" path="res://img/shidouicon.png" id="2_1ifi4"]
+[ext_resource type="Script" uid="uid://bsq3cw35871qs" path="res://scr/perso/shidou.gd" id="2_65f7p"]
+
+[node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_oj453")]
+script = ExtResource("2_65f7p")
+chance_kablamo = 0.3
+chance_dragon = 0.35
+chance_big_bang = 0.45
+shot_cooldown = 3
+kablamo_force_mult = 1.6
+kablamo_curve_total_deg = 12.0
+kablamo_curve_deg_per_sec = 25.0
+big_bang_distance = 900.0
+big_bang_descend_from = 0.5
+rush_speed_mult = 1.8
+chance_header = 0.4
+rush_cooldown = 2
+obsessive_rounds = 3
+obsessive_cooldown = 2
+lover_pass_bonus = 0.05
+lover_extra_skill_actions = 1
+kick_fx = null
+display_name = "Shidou Ryusei"
+visual_root = NodePath("SprPlayer")
+
+[node name="SprPlayer" parent="." index="1" unique_id=395354675]
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("2_1ifi4")

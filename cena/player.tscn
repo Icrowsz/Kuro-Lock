@@ -1,14 +1,22 @@
 [gd_scene format=3 uid="uid://cibqlwhi4brii"]
 
-[ext_resource type="Script" uid="uid://dv62dk2wasoti" path="res://scr/player.gd" id="1_f42by"]
+[ext_resource type="Script" uid="uid://dai3wb65nl12n" path="res://scr/player.gd" id="1_f42by"]
 
 [sub_resource type="CircleShape2D" id="CircleShape2D_mk8v6"]
 radius = 16.0
 
 [node name="Player" type="CharacterBody2D" unique_id=1241627939]
 script = ExtResource("1_f42by")
-
-[node name="SprPlayer" type="Sprite2D" parent="." unique_id=395354675]
+slide_ball_power = 350.0
+kick_force_ground = 75.0
+kick_force_volley = 65.0
+kick_force_flying = 70.0
+kick_force_high_ball = 60.0
+shot_chance_default = 0.25
+shot_chance_volley = 0.3
+shot_chance_flying = 0.35
 
 [node name="ColPlayer" type="CollisionShape2D" parent="." unique_id=330145363]
 shape = SubResource("CircleShape2D_mk8v6")
+
+[node name="SprPlayer" type="Sprite2D" parent="." unique_id=395354675]

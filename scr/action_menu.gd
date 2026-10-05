@@ -133,6 +133,17 @@ func _refresh() -> void:
 			var status: String = "Altura: %s" % Heights.level_name(p.height_level)
 			if p.is_down:
 				status += " | DERRUBADO (só pode Levantar)"
+			if p.is_confused():
+				status += " | CONFUSO (habilidades embaralhadas)"
+			if p.is_generals_suppressed():
+				status += " | AÇÕES GERAIS BLOQUEADAS (Body Core)"
+			if p.is_skills_suppressed():
+				status += " | HABILIDADES BLOQUEADAS (Watchtower)"
+			for blocked in MatchManager.GENERAL_ACTION_NAMES:
+				if p.is_general_action_blocked(blocked):
+					status += " | SEM %s (Obsessive Hater)" % MatchManager.GENERAL_ACTION_NAMES[blocked]
+			if p.extra_skill_left > 0:
+				status += " | +%d habilidade extra (Obsessive Lover)" % p.extra_skill_left
 			status += " | Correr %d/%d | Carrinho %d/%d" % [
 				p.runs_this_turn, p.max_runs_per_turn, p.slides_this_turn, p.max_slides_per_turn]
 			info_label.text = "Agindo: %s (%s) — %s\nProtagonista — gerais: %d | habilidade: %d\nSecundários — gerais: %d | habilidade: %d\nClique em um companheiro de time para trocar quem age" % [
@@ -154,6 +165,8 @@ func _refresh() -> void:
 			info_label.text = "Fim de jogo!"
 		MatchManager.Phase.KEEPERS_ACTING:
 			info_label.text = "Os goleiros estão agindo..."
+		MatchManager.Phase.TEAM_EFFECTS:
+			info_label.text = "Fim de turno: efeitos em andamento..."
 		MatchManager.Phase.FORMATION:
 			info_label.text = ""
 
@@ -196,6 +209,10 @@ func _update_skill_buttons() -> void:
 	var skills: Array[Dictionary] = []
 	if p:
 		skills = p.get_skills()
+	# Confuso (Confundo do Ness): a ordem dos botões é embaralhada e os nomes viram "???"
+	var confused: bool = p != null and p.is_confused()
+	if confused:
+		skills = _shuffle_for_confusion(p, skills)
 
 	var ids: Array[StringName] = []
 	for s in skills:
@@ -213,8 +230,23 @@ func _update_skill_buttons() -> void:
 			_skill_buttons.append(b)
 
 	for i in skills.size():
-		_skill_buttons[i].text = "★ " + String(skills[i]["name"])
-		_skill_buttons[i].disabled = not manager.can_use_skill(skills[i]["id"])
+		if confused:
+			_skill_buttons[i].text = "★ ???"
+			# Habilitado até quando a habilidade não pode ser usada: não entrega qual é qual.
+			# Apertar uma que não dá simplesmente não faz nada (o MatchManager confere).
+			_skill_buttons[i].disabled = not (manager.can_act() and manager.skill_left_for(p) > 0)
+		else:
+			_skill_buttons[i].text = "★ " + String(skills[i]["name"])
+			_skill_buttons[i].disabled = not manager.can_use_skill(skills[i]["id"])
+
+
+## Ordem embaralhada de quem está confuso (sorteada uma vez por confusão, não a cada frame)
+func _shuffle_for_confusion(p: Player, skills: Array[Dictionary]) -> Array[Dictionary]:
+	var order: Array[int] = p.get_confusion_order(skills.size())
+	var shuffled: Array[Dictionary] = []
+	for index in order:
+		shuffled.append(skills[index])
+	return shuffled
 
 
 func _process(_delta: float) -> void:

@@ -1,0 +1,27 @@
+[gd_scene format=3 uid="uid://be12oigucca6e"]
+
+[ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_ygkwl"]
+[ext_resource type="Texture2D" uid="uid://bc6g2wh646cjx" path="res://img/bachiraicon.png" id="2_3lb65"]
+[ext_resource type="Script" uid="uid://c5dwkomypbgg5" path="res://scr/perso/bachira.gd" id="2_6eyd0"]
+
+[node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_ygkwl")]
+script = ExtResource("2_6eyd0")
+chance_bon = 0.3
+chance_bee = 0.4
+bon_peak_level = 2
+shot_cooldown = 2
+step_range = 110.0
+step_max_targets = 2
+step_stun_turns = 1
+step_cooldown = 3
+instinct_cooldown = 3
+instinct_extra_generals = 1
+instinct_sticks_ball = true
+instinct_stick_extra_rounds = 0
+kick_fx = null
+display_name = "Meguru Bachira"
+visual_root = NodePath("SprPlayer")
+
+[node name="SprPlayer" parent="." index="1" unique_id=395354675]
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("2_3lb65")

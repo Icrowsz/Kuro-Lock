@@ -1,14 +1,23 @@
 [gd_scene format=3 uid="uid://bk2mu2jugbk7l"]
 
 [ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_nmfa0"]
-[ext_resource type="Script" uid="uid://cppetvo4e6jvj" path="res://scr/isagi.gd" id="2_rema1"]
+[ext_resource type="Script" uid="uid://bci5nf7yka56f" path="res://scr/perso/isagi.gd" id="2_rema1"]
 [ext_resource type="Texture2D" uid="uid://dljkng3hwb457" path="res://img/isagiicon.png" id="3_pmpwr"]
+[ext_resource type="Script" uid="uid://ilb76etk0iey" path="res://scr/kick_fx.gd" id="3_rp0o0"]
 
-[node name="Player" unique_id=1241627939 node_paths=PackedStringArray("tint_sprite") instance=ExtResource("1_nmfa0")]
+[sub_resource type="Resource" id="Resource_foyax"]
+script = ExtResource("3_rp0o0")
+color = Color(0, 0.38039216, 1, 1)
+trail_width = 19.0
+shape = 1
+particle_color = Color(0.13900164, 0.69726306, 0.99999994, 1)
+
+[node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_nmfa0")]
 script = ExtResource("2_rema1")
-chance_backheel = 0.45
-chance_direct = 0.5
-chance_two_gun = 0.6
+chance_backheel = 0.3
+chance_direct = 0.35
+chance_two_gun = 0.4
+shot_cooldown = 2
 piece_size = Vector2(320, 380)
 attack_piece_x = 0.55
 midfield_piece_x = 0.0
@@ -16,12 +25,15 @@ defense_piece_x = -0.55
 attack_piece_bonus = 0.05
 midfield_run_bonus = 0.75
 pieces_rounds = 5
+pieces_cooldown = 3
 metavision_rounds = 3
 metavision_bonus = 0.05
 metavision_extra_ally_skills = 1
+metavision_cooldown = 3
+kick_fx = SubResource("Resource_foyax")
 display_name = "Yoichi Isagi"
-tint_sprite = NodePath("SprPlayer")
+visual_root = NodePath("SprPlayer")
 
-[node name="SprPlayer" parent="." index="0" unique_id=395354675]
-scale = Vector2(0.19, 0.19)
+[node name="SprPlayer" parent="." index="1" unique_id=395354675]
+scale = Vector2(0.2, 0.2)
 texture = ExtResource("3_pmpwr")

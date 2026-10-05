@@ -11,7 +11,17 @@ extends RefCounted
 const CHARACTERS: Array[Dictionary] = [
 	{"id": "base", "name": "Personagem Base", "scene": "res://cena/player.tscn"},
 	{"id": "isagi", "name": "Isagi", "scene": "res://cena/perso/isagi.tscn"},
+	{"id": "bachira", "name": "Bachira", "scene": "res://cena/perso/bachira.tscn"},
+	{"id": "rin", "name": "Rin", "scene": "res://cena/perso/rin.tscn"},
+	{"id": "shidou", "name": "Shidou", "scene": "res://cena/perso/shidou.tscn"},
+	{"id": "niko", "name": "Niku", "scene": "res://cena/perso/niko.tscn"},
+	{"id": "karasu", "name": "Karasu", "scene": "res://cena/perso/karasu.tscn"},
+	{"id": "aiku", "name": "Aiku", "scene": "res://cena/perso/aiku.tscn"},
+	{"id": "kurona", "name": "Kurona", "scene": "res://cena/perso/kurona.tscn"},
+	{"id": "charles", "name": "Charles", "scene": "res://cena/perso/charles.tscn"},
+	{"id": "ness", "name": "Ness", "scene": "res://cena/perso/ness.tscn"},
 ]
+
 
 
 ## Só os personagens cuja cena existe (assim o menu não quebra se faltar alguma)

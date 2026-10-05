@@ -1,0 +1,48 @@
+[gd_scene format=3 uid="uid://6jjw7srnnkt3"]
+
+[ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_ba5ft"]
+[ext_resource type="Script" uid="uid://5q04nfk8km4n" path="res://scr/perso/rin.gd" id="2_1uojg"]
+[ext_resource type="Texture2D" uid="uid://dyeyq7om3cv7x" path="res://img/rinicon.png" id="2_urxsj"]
+[ext_resource type="Script" uid="uid://ilb76etk0iey" path="res://scr/kick_fx.gd" id="3_lwpik"]
+
+[sub_resource type="Resource" id="Resource_hkwn6"]
+script = ExtResource("3_lwpik")
+color = Color(0, 0.6572655, 0.34396765, 1)
+trail_width = 19.0
+shape = 1
+particle_color = Color(0, 0.8487837, 0.649884, 1)
+
+[node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_ba5ft")]
+script = ExtResource("2_1uojg")
+chance_curve = 0.35
+chance_trivela = 0.4
+chance_crash = 0.5
+curve_force = 80.0
+curve_aim_range = 160.0
+curve_turn_degrees = 55.0
+trivela_turn_degrees = 95.0
+curve_duration = 1.0
+curve_preview_length = 420.0
+crash_enemy_radius = 90.0
+curve_cooldown = 2
+gravity_range = 300.0
+pull_ball_radius = 110.0
+pull_ball_time = 0.25
+puppets_ball_radius = 110.0
+puppets_range = 500.0
+puppets_flight_time = 0.9
+puppets_curve_amount = 0.35
+puppets_arc_height = 60.0
+mangle_push_distance = 150.0
+gravity_cooldown = 2
+destroyer_rounds = 3
+destroyer_cooldown = 3
+typing_time = 5.0
+typing_words = Array[String](["CURVA", "DESTRUIR", "INVERTER", "OPOSTO", "CAOS"])
+kick_fx = SubResource("Resource_hkwn6")
+display_name = "Itoshi Rin"
+visual_root = NodePath("SprPlayer")
+
+[node name="SprPlayer" parent="." index="0" unique_id=395354675]
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("2_urxsj")

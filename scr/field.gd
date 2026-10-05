@@ -40,6 +40,13 @@ signal ball_reset_after_goal
 @export_group("Goleiros")
 @export var spawn_goalkeepers: bool = true             # cria um goleiro por time (se a cena não tiver)
 
+@export_group("Rede")
+@export var animate_nets: bool = true                  # rede deformável (false = rede estática antiga)
+@export var net_cell_size: float = 12.0                # tamanho de cada quadradinho da malha
+@export var net_stiffness: float = 90.0                # quanto a rede volta ao repouso
+@export var net_damping: float = 4.5                   # quanto ela demora para parar de balançar
+@export var net_bulge: float = 1.0                     # multiplicador de quanto ela estufa
+
 @export_group("Cores")
 @export var grass_dark: Color = Color("2e7d32")
 @export var grass_light: Color = Color("388e3c")
@@ -48,6 +55,7 @@ signal ball_reset_after_goal
 
 var _prev_pos: Vector2 = Vector2.INF
 var _scored_side: int = 0  # 0 = nenhum gol em andamento, 1 = gol da direita, -1 = gol da esquerda
+var _nets: Dictionary = {}  # lado (1 = direita, -1 = esquerda) -> GoalNet
 
 
 ## Nó auxiliar que desenha uma peça (trave) com profundidade própria
@@ -68,6 +76,7 @@ func _ready() -> void:
 		var gx: float = pitch_size.x * 0.5 * dir
 		_add_drawer(Vector2(gx, -goal_width * 0.5), _draw_post.bind(true))   # trave de trás (com travessão)
 		_add_drawer(Vector2(gx, goal_width * 0.5), _draw_post.bind(false))   # trave da frente
+	_build_nets()
 
 
 ## Cria um goleiro para cada time que ainda não tem um (você pode colocar os seus na cena)
@@ -83,6 +92,44 @@ func _spawn_goalkeepers() -> void:
 		var keeper := Goalkeeper.new()
 		keeper.team = t
 		ball.get_parent().add_child(keeper)  # mesma camada de profundidade da bola e dos jogadores
+
+
+## Uma rede deformável por gol (fica acima da grama e atrás de jogadores e bola)
+func _build_nets() -> void:
+	if not animate_nets:
+		return
+	var half_x: float = pitch_size.x * 0.5
+	for side in [-1, 1]:
+		var dir: int = side
+		var gx: float = half_x * dir
+		var net := GoalNet.new()
+		net.rect = Rect2(gx if dir > 0 else gx - goal_depth, -goal_width * 0.5, goal_depth, goal_width)
+		net.front_is_min_x = dir > 0
+		net.cell_size = net_cell_size
+		net.stiffness = net_stiffness
+		net.damping = net_damping
+		net.bulge = net_bulge
+		add_child(net)
+		net.z_index = 1   # relativo ao campo (-4096): acima da grama, abaixo de todo o resto
+		_nets[dir] = net
+
+
+func _net_hit(side: int, global_pos: Vector2, velocity: Vector2, strength: float) -> void:
+	var net := _nets.get(side) as GoalNet
+	if net:
+		net.hit(global_pos, velocity, strength)
+
+
+func _net_shake(side: int, global_pos: Vector2, amount: float) -> void:
+	var net := _nets.get(side) as GoalNet
+	if net:
+		net.shake(global_pos, amount)
+
+
+## Para outros scripts (ex: o goleiro mergulhando na rede): mexe na rede do gol mais perto
+func poke_net(global_pos: Vector2, velocity: Vector2 = Vector2.ZERO, strength: float = 1.0) -> void:
+	var side: int = 1 if to_local(global_pos).x >= 0.0 else -1
+	_net_hit(side, global_pos, velocity, strength)
 
 
 func _add_drawer(local_pos: Vector2, fn: Callable) -> void:
@@ -139,7 +186,7 @@ func _check_goals(p: Vector2) -> Vector2:
 		if cross_y < post_y - r:
 			# Dentro da boca do gol
 			if h < crossbar_height - crossbar_thickness:
-				_register_goal(dir)
+				_register_goal(dir, p)
 				return p
 			elif h <= top:
 				# Travessão: quica para baixo e volta
@@ -155,6 +202,8 @@ func _check_goals(p: Vector2) -> Vector2:
 
 func _bounce_x(p: Vector2, gx: float, dir: int) -> Vector2:
 	var v: Vector2 = ball.velocity
+	# A rede está presa na trave/travessão: a pancada faz ela tremer
+	_net_shake(dir, to_global(Vector2(gx, p.y)), clampf(absf(v.x) / 800.0, 0.2, 1.5))
 	v.x = -v.x * post_bounce
 	ball.velocity = v
 	var out: Vector2 = p
@@ -162,8 +211,10 @@ func _bounce_x(p: Vector2, gx: float, dir: int) -> Vector2:
 	return out
 
 
-func _register_goal(dir: int) -> void:
+func _register_goal(dir: int, entry: Vector2 = Vector2.ZERO) -> void:
 	_scored_side = dir
+	# A rede estufa conforme a força do chute (velocidade da bola ao entrar)
+	_net_hit(dir, to_global(entry), ball.velocity, clampf(ball.velocity.length() / 700.0, 0.35, 2.0))
 	var scoring_team: int = 0 if dir > 0 else 1  # time 0 ataca o gol da direita
 	goal_scored.emit(scoring_team)
 	_reset_after_delay()
@@ -185,16 +236,27 @@ func _contain_in_net(p: Vector2) -> Vector2:
 
 	var out: Vector2 = p
 	var v: Vector2 = ball.velocity
+	var net := _nets.get(_scored_side) as GoalNet
+
+	# A bola arrasta a rede enquanto anda lá dentro
+	if net:
+		net.drag(to_global(out), v, get_physics_process_delta_time())
 
 	if out.x < x_min:
 		out.x = x_min
+		if net and absf(v.x) > 40.0:
+			net.hit(to_global(out), Vector2(v.x, 0.0), clampf(absf(v.x) / 700.0, 0.2, 2.0))
 		v.x = absf(v.x) * 0.2
 	elif out.x > x_max:
 		out.x = x_max
+		if net and absf(v.x) > 40.0:
+			net.hit(to_global(out), Vector2(v.x, 0.0), clampf(absf(v.x) / 700.0, 0.2, 2.0))
 		v.x = -absf(v.x) * 0.2
 
 	if absf(out.y) > inner_y:
 		out.y = signf(out.y) * inner_y
+		if net and absf(v.y) > 40.0:
+			net.hit(to_global(out), Vector2(0.0, v.y), clampf(absf(v.y) / 700.0, 0.2, 2.0))
 		v.y = -v.y * 0.2
 
 	ball.velocity = v
@@ -294,20 +356,26 @@ func _draw() -> void:
 		# Marca do pênalti
 		draw_circle(Vector2(gx - dir * penalty_spot_distance, 0.0), 4.0, line_color)
 
-		# Rede (no chão, atrás da linha de fundo)
-		var net_x: float = gx if dir > 0 else gx - goal_depth
-		var net := Rect2(net_x, -goal_width * 0.5, goal_depth, goal_width)
-		draw_rect(net, Color(0, 0, 0, 0.35))
-		var step: float = 12.0
-		var x: float = net.position.x
-		while x <= net.end.x:
-			draw_line(Vector2(x, net.position.y), Vector2(x, net.end.y), Color(1, 1, 1, 0.25), 1.0)
-			x += step
-		var y: float = net.position.y
-		while y <= net.end.y:
-			draw_line(Vector2(net.position.x, y), Vector2(net.end.x, y), Color(1, 1, 1, 0.25), 1.0)
-			y += step
-		draw_rect(net, Color(1, 1, 1, 0.6), false, 2.0)
+		# Rede estática antiga (a rede deformável é o GoalNet)
+		if not animate_nets:
+			_draw_static_net(gx, dir)
+
+
+## Rede desenhada direto no campo (usada só quando animate_nets = false)
+func _draw_static_net(gx: float, dir: int) -> void:
+	var net_x: float = gx if dir > 0 else gx - goal_depth
+	var net := Rect2(net_x, -goal_width * 0.5, goal_depth, goal_width)
+	draw_rect(net, Color(0, 0, 0, 0.35))
+	var step: float = 12.0
+	var x: float = net.position.x
+	while x <= net.end.x:
+		draw_line(Vector2(x, net.position.y), Vector2(x, net.end.y), Color(1, 1, 1, 0.25), 1.0)
+		x += step
+	var y: float = net.position.y
+	while y <= net.end.y:
+		draw_line(Vector2(net.position.x, y), Vector2(net.end.x, y), Color(1, 1, 1, 0.25), 1.0)
+		y += step
+	draw_rect(net, Color(1, 1, 1, 0.6), false, 2.0)
 
 
 ## Desenha uma trave "em pé"; a de trás também desenha o travessão

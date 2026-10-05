@@ -19,6 +19,8 @@ var _event_label: Label
 var _event_tween: Tween
 var _summary: PanelContainer
 var _summary_box: VBoxContainer
+## "1º Tempo" / "2º Tempo" / "Prorrogação", exibido embaixo do placar
+var _period_label: Label
 
 
 func _ready() -> void:
@@ -32,7 +34,10 @@ func _ready() -> void:
 	manager.keeper_event.connect(_on_keeper_event)
 	manager.formation_started.connect(_on_formation_started)
 	manager.match_started.connect(_on_match_started)
+	manager.half_started.connect(_on_half_started)
+	manager.extra_time_started.connect(_on_extra_time_started)
 	_refresh_scores()
+	_refresh_period()
 
 
 # ---------- CONSTRUÇÃO ----------
@@ -47,10 +52,18 @@ func _build_scoreboard() -> void:
 	panel.add_theme_stylebox_override("panel", UiStyle.panel_style(UiStyle.PANEL_BORDER, 20.0, 4.0))
 	add_child(panel)
 
+	# Pilha vertical: linha do placar em cima, "1º Tempo / 2º Tempo / Prorrogação" embaixo
+	var outer := VBoxContainer.new()
+	outer.add_theme_constant_override("separation", 2)
+	outer.alignment = BoxContainer.ALIGNMENT_CENTER
+	outer.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	panel.add_child(outer)
+
 	var box := HBoxContainer.new()
 	box.add_theme_constant_override("separation", 14)
+	box.alignment = BoxContainer.ALIGNMENT_CENTER
 	box.mouse_filter = Control.MOUSE_FILTER_IGNORE
-	panel.add_child(box)
+	outer.add_child(box)
 
 	for t in manager.team_count:
 		if t > 0:
@@ -59,6 +72,11 @@ func _build_scoreboard() -> void:
 		box.add_child(label)
 		_score_labels.append(label)
 		_last_scores.append(0)
+
+	_period_label = UiStyle.make_label("", 15, UiStyle.MUTED_COLOR)
+	_period_label.horizontal_alignment = HORIZONTAL_ALIGNMENT_CENTER
+	_period_label.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	outer.add_child(_period_label)
 
 
 ## Linha curta embaixo do placar com o que os goleiros fazem (defesa, lançamento...)
@@ -168,6 +186,30 @@ func _on_formation_started() -> void:
 func _on_match_started() -> void:
 	visible = true
 	_refresh_scores()   # os times podem ter mudado de nome e cor na formação
+	_refresh_period()
+
+
+func _on_half_started(_half: int) -> void:
+	_refresh_period()
+
+
+func _on_extra_time_started() -> void:
+	_refresh_period()
+	# Aviso rápido avisando que entrou no gol de ouro
+	_event_label.text = "Prorrogação! Gol de ouro decide a partida."
+	_event_label.modulate = Color.WHITE
+	_event_label.visible = true
+	UiStyle.pop(_event_label, 1.2, 0.2)
+	if _event_tween and _event_tween.is_valid():
+		_event_tween.kill()
+	_event_tween = create_tween()
+	_event_tween.tween_interval(3.0)
+	_event_tween.tween_property(_event_label, "modulate:a", 0.0, 0.4)
+	_event_tween.tween_callback(_event_label.hide)
+
+
+func _refresh_period() -> void:
+	_period_label.text = manager.time_label()
 
 
 func _on_back_pressed(button: Button) -> void:
@@ -185,9 +227,13 @@ func _on_match_ended(winner: int) -> void:
 		_summary_box.remove_child(child)
 		child.queue_free()
 
-	# Título e placar final
-	var title := UiStyle.make_label("FIM DE JOGO — %s venceu!" % manager.get_team_name(winner), 34)
-	title.add_theme_color_override("font_color", _team_color(winner))
+	# Título e placar final (winner = -1 quando a prorrogação acaba empatada)
+	var is_draw: bool = winner < 0
+	var title_text: String = "FIM DE JOGO — Empate!" if is_draw \
+		else "FIM DE JOGO — %s venceu!" % manager.get_team_name(winner)
+	var title := UiStyle.make_label(title_text, 34)
+	if not is_draw:
+		title.add_theme_color_override("font_color", _team_color(winner))
 	_summary_box.add_child(title)
 
 	var parts: PackedStringArray = []

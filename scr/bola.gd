@@ -77,6 +77,14 @@ var shot_team: int = -1   # time de quem chutou (-1 = desconhecido)
 ## Segurada por alguém (o goleiro): física desligada, a bola acompanha quem a segura
 var held_by: Node2D = null
 
+## Presa por um feitiço (Arresto Momentum do Ness): só o time de quem lançou consegue
+## interagir com a bola. null = livre. Quem lançou é quem limpa (ou release_hover()).
+var spell_owner: Player = null
+
+## Mantém a aura/partículas da habilidade mesmo com a bola pairando (ex: Alohomora do Ness,
+## que leva a bola pelo ar sem usar a física)
+var fx_during_hover: bool = false
+
 ## Rastro suave atrás da bola (ligado durante os passes)
 @export_group("Rastro")
 @export var trail_length: int = 12
@@ -84,6 +92,19 @@ var trail_enabled: bool = false
 var _trail: Array[Vector2] = []
 var _hover_time: float = 0.0
 var _prev_global: Vector2 = Vector2.ZERO
+
+## FX de habilidade (aura + partículas). Os 3 nós são criados UMA vez, na primeira
+## habilidade usada, e reaproveitados em todos os chutes seguintes.
+@export_group("FX de habilidade")
+@export var fx_stop_speed: float = 40.0   # rolando abaixo dessa velocidade, o efeito acaba
+var _fx_active: bool = false
+var _fx_touches: int = 0
+var _fx_step_sq: float = 16.0
+var _fx_max_points: int = 16
+var _styled_fx: KickFX = null
+var _fx_trail: Line2D
+var _fx_stream: CPUParticles2D
+var _fx_burst: CPUParticles2D
 
 @onready var sprite: Sprite2D = $Sprite
 @onready var shadow: Sprite2D = $Shadow
@@ -221,6 +242,141 @@ func _update_visuals(delta: float) -> void:
 	z_index = int(global_position.y)
 
 	_update_trail()
+	_update_fx()
+
+
+# ---------- FX DE HABILIDADE (aura + partículas) ----------
+
+## Liga a aura + partículas do `fx`. Chame logo DEPOIS do kick()/kick_ground().
+## Termina sozinho: alguém toca na bola, ela é segurada ou para de rolar.
+func play_fx(fx: KickFX) -> void:
+	if fx == null:
+		return
+	_ensure_fx_nodes()
+	_fx_active = true
+	_fx_touches = interaction_count
+	_fx_step_sq = fx.trail_min_step * fx.trail_min_step
+	_fx_max_points = fx.trail_points
+
+	# Só reconfigura quando o estilo muda (ex: outro personagem chutou)
+	if fx != _styled_fx:
+		_styled_fx = fx
+		_fx_trail.width = fx.trail_width
+		_fx_trail.width_curve = fx.get_width_curve()
+		_fx_trail.gradient = fx.get_trail_gradient()
+		_fx_trail.material = fx.get_blend_material()
+		_style_particles(_fx_stream, fx, false)
+		_style_particles(_fx_burst, fx, true)
+
+	_fx_trail.clear_points()
+	_fx_trail.visible = true
+	_fx_stream.position = sprite.position
+	_fx_burst.position = sprite.position
+	_fx_stream.emitting = true
+	_fx_burst.restart()
+	_fx_burst.emitting = true
+
+
+## Para de gerar aura/partículas novas (o que já saiu some sozinho)
+func stop_fx() -> void:
+	_fx_active = false
+	if _fx_stream:
+		_fx_stream.emitting = false
+
+
+## Apaga tudo na hora (ex: bola reposta depois de um gol)
+func _clear_fx() -> void:
+	_fx_active = false
+	if _fx_trail == null:
+		return
+	_fx_trail.clear_points()
+	_fx_trail.visible = false
+	_fx_stream.emitting = false
+	_fx_burst.emitting = false
+
+
+func _ensure_fx_nodes() -> void:
+	if _fx_trail != null:
+		return
+	_fx_trail = Line2D.new()
+	_fx_trail.top_level = true   # pontos em coordenadas globais: o rastro fica no lugar por onde a bola passou
+	_fx_trail.joint_mode = Line2D.LINE_JOINT_ROUND
+	_fx_trail.begin_cap_mode = Line2D.LINE_CAP_ROUND
+	_fx_trail.round_precision = 4
+	_fx_trail.visible = false
+	_fx_stream = CPUParticles2D.new()
+	_fx_burst = CPUParticles2D.new()
+	_fx_stream.emitting = false   # o padrão do CPUParticles2D é ligado
+	_fx_burst.emitting = false
+	for n: Node2D in [_fx_trail, _fx_stream, _fx_burst]:
+		add_child(n)
+		move_child(n, sprite.get_index())   # desenha ATRÁS do sprite da bola
+
+
+func _style_particles(p: CPUParticles2D, fx: KickFX, burst: bool) -> void:
+	p.texture = fx.get_texture()
+	p.material = fx.get_blend_material()
+	p.local_coords = false          # as partículas ficam no mundo, não andam com a bola
+	p.fixed_fps = 30                # metade das atualizações: visualmente igual, bem mais barato
+	p.lifetime = fx.lifetime
+	p.one_shot = burst
+	p.explosiveness = 1.0 if burst else 0.0
+	p.randomness = 0.5
+	p.amount = fx.burst_amount if burst else fx.amount
+	p.emission_shape = CPUParticles2D.EMISSION_SHAPE_SPHERE
+	p.emission_sphere_radius = fx.emit_radius
+	p.direction = Vector2.UP
+	p.spread = 180.0                # para todos os lados
+	p.gravity = fx.gravity
+	if burst:
+		p.initial_velocity_min = fx.burst_speed * 0.4
+		p.initial_velocity_max = fx.burst_speed
+		p.damping_min = fx.burst_speed * 1.2   # a explosão freia rápido
+		p.damping_max = fx.burst_speed * 1.2
+	else:
+		p.initial_velocity_min = fx.speed_min
+		p.initial_velocity_max = fx.speed_max
+		p.damping_min = fx.damping
+		p.damping_max = fx.damping
+	p.tangential_accel_min = fx.swirl
+	p.tangential_accel_max = fx.swirl
+	p.angle_min = 0.0
+	p.angle_max = 360.0
+	p.angular_velocity_min = -fx.spin
+	p.angular_velocity_max = fx.spin
+	p.scale_amount_min = fx.scale_min
+	p.scale_amount_max = fx.scale_max
+	p.scale_amount_curve = fx.get_shrink_curve()
+	p.color_ramp = fx.get_particle_gradient()
+
+
+func _update_fx() -> void:
+	if _fx_trail == null:
+		return   # nenhuma habilidade foi usada ainda: custo zero
+	if _fx_active:
+		var keep_hover: bool = hovering and fx_during_hover
+		var stopped: bool = not keep_hover and is_on_ground() \
+				and velocity.length_squared() < fx_stop_speed * fx_stop_speed
+		if interaction_count != _fx_touches or (hovering and not fx_during_hover) or stopped:
+			stop_fx()
+		else:
+			_fx_stream.position = sprite.position
+			_push_trail_point(sprite.global_position)
+	elif _fx_trail.visible:
+		# Depois que o efeito acaba, a cauda vai sendo "comida" até sumir
+		if _fx_trail.get_point_count() > 0:
+			_fx_trail.remove_point(0)
+		else:
+			_fx_trail.visible = false
+
+
+func _push_trail_point(p: Vector2) -> void:
+	var n: int = _fx_trail.get_point_count()
+	if n > 0 and _fx_trail.get_point_position(n - 1).distance_squared_to(p) < _fx_step_sq:
+		return   # quase não andou: não polui o rastro com pontos colados
+	_fx_trail.add_point(p)
+	if n + 1 > _fx_max_points:
+		_fx_trail.remove_point(0)
 
 
 # ---------- API ----------
@@ -236,6 +392,7 @@ func reset(global_pos: Vector2) -> void:
 	_sticky_ignore_player = null
 	clear_touches()
 	pending_shot_chance = NO_SHOT
+	_clear_fx()
 	global_position = global_pos
 	velocity = Vector2.ZERO
 	height = 0.0
@@ -271,6 +428,11 @@ func has_pending_shot() -> bool:
 
 func is_held() -> bool:
 	return held_by != null
+
+
+## A bola está presa por um feitiço de OUTRO time? (aí este time não consegue tocar nela)
+func is_locked_for(team: int) -> bool:
+	return spell_owner != null and is_instance_valid(spell_owner) and spell_owner.team != team
 
 
 ## Alguém (o goleiro) pega a bola: ela para e passa a acompanhar quem a segura
@@ -347,6 +509,7 @@ func _on_hover_tween_finished() -> void:
 func release_hover() -> void:
 	hovering = false
 	held_by = null
+	spell_owner = null
 	_kill_hover_tween()
 
 

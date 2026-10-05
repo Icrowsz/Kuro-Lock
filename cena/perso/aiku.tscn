@@ -1,0 +1,35 @@
+[gd_scene format=3 uid="uid://81cbxrf3nqq0"]
+
+[ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_aypui"]
+[ext_resource type="Script" uid="uid://ccslhyyp5gdn1" path="res://scr/perso/aiku.gd" id="2_5wsq7"]
+[ext_resource type="Texture2D" uid="uid://bh64n1h7aisuq" path="res://img/aikuicon.png" id="2_deyxm"]
+
+[node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_aypui")]
+script = ExtResource("2_5wsq7")
+lunge_range = 260.0
+lunge_dash_time = 0.25
+lunge_stop_distance = 40.0
+lunge_leash_range = 160.0
+lunge_rounds = 3
+bloom_rounds = 2
+lunge_cooldown = 3
+viper_aim_range = 90.0
+viper_distance = 420.0
+viper_duration = 0.65
+viper_hit_radius = 60.0
+viper_ball_pass_range = 300.0
+viper_weak_kick_speed = 600.0
+viper_weak_kick_chance = 0.2
+viper_cooldown = 2
+wall_range = 200.0
+wall_jump_time = 0.2
+wall_weak_kick_speed = 650.0
+wall_weak_kick_chance = 0.2
+wall_cooldown = 2
+kick_fx = null
+display_name = "Oliver Aiku"
+visual_root = NodePath("SprPlayer")
+
+[node name="SprPlayer" parent="." index="0" unique_id=395354675]
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("2_deyxm")

@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://celvxhj05n28w"]
+
+[ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_kn1um"]
+[ext_resource type="Texture2D" uid="uid://c8c0ggwttdqjr" path="res://img/nikoicon.png" id="2_024ko"]
+[ext_resource type="Script" uid="uid://bf4n2p314klxq" path="res://scr/perso/niko.gd" id="2_aen06"]
+
+[node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_kn1um")]
+script = ExtResource("2_aen06")
+tower_radius = 270.0
+tower_rounds = 3
+tower_cooldown = 3
+body_core_win_chance = 0.75
+body_core_rounds = 3
+body_core_break_distance = 160.0
+body_core_contact_distance = 44.0
+body_core_approach_time = 0.45
+tactical_range = 550.0
+tactical_cooldown = 2
+tactical_curve = 0.25
+metavision_rounds = 3
+metavision_pass_bonus = 0.05
+metavision_extra_ally_skills = 1
+metavision_cooldown = 3
+kick_fx = null
+display_name = "Niko Ikki"
+visual_root = NodePath("SprPlayer")
+
+[node name="SprPlayer" parent="." index="1" unique_id=395354675]
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("2_024ko")
