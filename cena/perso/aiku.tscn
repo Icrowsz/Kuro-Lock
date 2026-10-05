@@ -6,7 +6,7 @@
 
 [node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_aypui")]
 script = ExtResource("2_5wsq7")
-lunge_range = 260.0
+lunge_range = 200.0
 lunge_dash_time = 0.25
 lunge_stop_distance = 40.0
 lunge_leash_range = 160.0
@@ -30,6 +30,6 @@ kick_fx = null
 display_name = "Oliver Aiku"
 visual_root = NodePath("SprPlayer")
 
-[node name="SprPlayer" parent="." index="0" unique_id=395354675]
+[node name="SprPlayer" parent="." index="1" unique_id=395354675]
 scale = Vector2(0.2, 0.2)
 texture = ExtResource("2_deyxm")

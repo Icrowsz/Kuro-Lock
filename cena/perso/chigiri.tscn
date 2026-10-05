@@ -4,11 +4,12 @@
 [ext_resource type="Script" uid="uid://bitleu8jom2og" path="res://scr/perso/chigiri.gd" id="2_v3jbk"]
 [ext_resource type="Texture2D" uid="uid://p8cxc7eliof7" path="res://img/chigiriicon.png" id="3_rknuj"]
 
-[node name="Player" unique_id=1241627939 instance=ExtResource("1_yau7e")]
+[node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_yau7e")]
 script = ExtResource("2_v3jbk")
 golden_zone_rounds = 2
 golden_zone_cooldown = 2
-golden_zone_radius = 70.0
+golden_zone_radius = 90.0
+golden_zone_outside_margin = 210.0
 chance_44_pant = 0.4
 golden_zone_flip_side = false
 accelerate_mult = 1.7
@@ -24,6 +25,8 @@ red_princess_rise_time = 0.5
 red_princess_fall_time = 0.55
 miau_cooldown = 3
 kick_fx = null
+display_name = "Hyoma Chigiri"
+visual_root = NodePath("SprPlayer")
 
 [node name="SprPlayer" parent="." index="1" unique_id=395354675]
 scale = Vector2(0.2, 0.2)

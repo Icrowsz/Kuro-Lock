@@ -37,12 +37,12 @@ mangle_push_distance = 150.0
 gravity_cooldown = 2
 destroyer_rounds = 3
 destroyer_cooldown = 3
-typing_time = 5.0
+typing_time = 2.0
 typing_words = Array[String](["CURVA", "DESTRUIR", "INVERTER", "OPOSTO", "CAOS"])
 kick_fx = SubResource("Resource_hkwn6")
 display_name = "Itoshi Rin"
 visual_root = NodePath("SprPlayer")
 
-[node name="SprPlayer" parent="." index="0" unique_id=395354675]
+[node name="SprPlayer" parent="." index="1" unique_id=395354675]
 scale = Vector2(0.2, 0.2)
 texture = ExtResource("2_urxsj")

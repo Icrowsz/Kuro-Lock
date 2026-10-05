@@ -16,11 +16,14 @@ pass_cooldown = 3
 gremlin_shot_chance = 0.35
 gremlin_shot_curve_deg = 1.0
 gremlin_cooldown = 2
+gremlin_stick_extra_rounds = 0
 metavision_rounds = 3
 metavision_range = 400.0
+metavision_enemy_shot_penalty = 0.1
 metavision_extra_ally_skills = 1
 metavision_cooldown = 3
 kick_fx = null
+display_name = "Charles Chevalier"
 visual_root = NodePath("SprPlayer")
 
 [node name="SprPlayer" parent="." index="1" unique_id=395354675]

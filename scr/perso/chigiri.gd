@@ -4,9 +4,10 @@ extends Player
 ##
 ## 1. Golden Zone / 44 Pant (ação de habilidade, com 2 variantes automáticas; recarga de 2
 ##      rodadas):
-##      - Sem zona ativa -> Golden Zone: cria um círculo dourado na ponta DIREITA da pequena
-##          área do gol inimigo (ver golden_zone_corner() — veja a nota de orientação logo
-##          abaixo), que dura 2 rodadas.
+##      - Sem zona ativa -> Golden Zone: cria um círculo dourado na ponta externa DIREITA da
+##          pequena área do goleiro (o canto da caixa mais longe da linha de gol, do lado
+##          direito — ver nota de orientação abaixo), do lado de FORA da caixa, que dura 2
+##          rodadas.
 ##      - Zona ativa, Chigiri DENTRO dela, no chão, com a bola ao alcance (no chão ou
 ##          suspensa) -> 44 Pant: um chute, 40% de chance. Não tem recarga própria: pode ser
 ##          repetido à vontade enquanto a zona durar (só a criação da zona usa CD_ZONE).
@@ -14,18 +15,19 @@ extends Player
 ##      ORIENTAÇÃO DA "PONTA DIREITA": o projeto não guarda qual lado da tela é "direita", então
 ##      calculei como a direita de QUEM ATACA aquele gol (vire de costas para o meio-campo,
 ##      de frente para o gol: a mão direita aponta para esse lado). Se ficar invertido na sua
-##      tela, troque golden_zone_flip_side para true (ou o sinal de golden_zone_corner()).
+##      tela, troque golden_zone_flip_side para true (ou o sinal de _golden_zone_corner()).
 ##
-## 2. Accelerate / Once More (ação geral Correr, com variante automática pela altura):
-##      - Chigiri no chão -> Accelerate: Correr normal, mas 1.7x mais rápido (accelerate_mult).
-##          Sem recarga (é só a corrida dele).
-##      - Chigiri suspenso -> Once More: em vez de mover livre, ele avança reto em direção à
-##          bola (curto/médio: once_more_dash_range). Se o avanço alcançar a bola, ele a
-##          domina (ela para, nos pés dele) e ganha +1 ação de habilidade. Recarga de 3
-##          rodadas, mesmo se não alcançar a bola.
-##      Importante: o botão "Correr" do menu continua com o mesmo texto para todo mundo (o
-##      menu não troca o nome dos botões gerais, só os de habilidade) — só o comportamento
-##      muda conforme a altura do Chigiri.
+## 2. Accelerate (ação geral Correr) / Once More (ação de habilidade; recarga de 3 rodadas):
+##      - Accelerate: a corrida normal do Chigiri (ação geral "Correr"), só que 1.7x mais
+##          rápida (accelerate_mult). Sem recarga, é só como ele corre. Enquanto ele corre,
+##          uma pantera vermelha minimalista e translúcida aparece ao lado dele (efeito
+##          visual, ver _draw_panther()).
+##      - Once More: ação de HABILIDADE própria (tem botão no catálogo), só usável com
+##          Chigiri suspenso. Ele avança reto em direção à bola (curto/médio:
+##          once_more_dash_range). Se o avanço alcançar a bola, ele a domina (ela para, nos
+##          pés dele), DESCE para o chão (height_level vira Chão) e ganha +1 ação de
+##          habilidade — já podendo usar o 44 Pant na sequência, por exemplo. Se não
+##          alcançar, continua Suspenso. Recarga de 3 rodadas, mesmo se não alcançar a bola.
 ##
 ## 3. Miau! / Red Princess (ação de habilidade, com 2 variantes automáticas pela distância da
 ##      bola; recarga de 3 rodadas — NÃO informada no pedido original, usei 3 por padrão,
@@ -43,14 +45,14 @@ extends Player
 ## Animações opcionais (se faltar alguma, o jogo só pula): golden_zone, pant_44, once_more,
 ## miau, red_princess.
 ##
-## PEÇAS NO RESTO DO PROJETO (já aplicadas nos arquivos devolvidos junto com este):
+## PEÇAS NO RESTO DO PROJETO (já aplicadas nos arquivos devolvidos nas rodadas anteriores):
 ## - field.gd: get_goal_area_rect(team), irmã do get_penalty_area_rect() que já existia —
 ##   usada para achar o canto da pequena área do gol inimigo.
-## - player.gd: o gancho can_run() (Correr, por padrão só no chão; o Chigiri sobrescreve para
-##   também valer suspenso).
-## - match_manager.gd: can_use_general() chama p.can_run() em vez de checar GROUND na mão.
+## - player.gd: o gancho can_run() (não é mais usado pelo Chigiri agora que o Once More virou
+##   habilidade própria, mas continua lá, inofensivo, para outros personagens que queiram).
 
 const SKILL_ZONE: StringName = &"golden_zone"
+const SKILL_ONCE_MORE: StringName = &"once_more"
 const SKILL_MIAU: StringName = &"miau"
 
 ## Grupos de recarga (as variantes de cada habilidade compartilham o mesmo)
@@ -67,6 +69,12 @@ enum MiauVariant { NONE, MIAU, RED_PRINCESS }
 @export var golden_zone_rounds: int = 2
 @export var golden_zone_cooldown: int = 2
 @export var golden_zone_radius: float = 70.0
+## O quanto o centro do círculo fica empurrado para FORA da caixa, a partir do canto externo
+## (quanto maior, mais longe do canto — "mais à esquerda e mais embaixo" ao mesmo tempo, já
+## que essa é a direção diagonal pra fora do canto). PRECISA ser maior que golden_zone_radius,
+## senão o círculo volta a sobrepor a caixa. Dá pra ajustar aqui OU direto no Inspector da
+## cena (o valor salvo na cena tem prioridade sobre este padrão do script).
+@export var golden_zone_outside_margin: float = 180.0
 @export_range(0.0, 1.0) var chance_44_pant: float = 0.40
 ## Inverte o lado da zona, se "direita" saiu do lado errado na sua tela (ver nota no topo)
 @export var golden_zone_flip_side: bool = false
@@ -179,8 +187,9 @@ func _use_zone_skill() -> bool:
 	return false
 
 
-## Canto direito da pequena área do gol que o time ADVERSÁRIO defende (= o gol que Chigiri
-## ataca). "Direita" = a direita de quem está atacando aquele gol (ver nota no topo do arquivo).
+## Canto EXTERNO (o mais longe da linha de gol) do lado direito da pequena área do gol que o
+## time ADVERSÁRIO defende (= o gol que Chigiri ataca), empurrado para fora da caixa.
+## "Direita" = a direita de quem está atacando aquele gol (ver nota no topo do arquivo).
 func _golden_zone_corner() -> Vector2:
 	var field := get_tree().get_first_node_in_group("field") as Field
 	if field == null:
@@ -193,14 +202,20 @@ func _golden_zone_corner() -> Vector2:
 	if golden_zone_flip_side:
 		right = -right
 
-	# x: a borda da área mais perto da linha de gol; y: o lado (direita) dela, um pouco
-	# recuado para o círculo caber inteiro dentro da pequena área
-	var inset: float = golden_zone_radius * 0.6
-	var goal_line_x: float = rect.position.x if team == 1 else rect.end.x   # a borda voltada para o gol
-	var x: float = goal_line_x + (inset if team == 1 else -inset)
-	var y: float = (rect.position.y + inset) if right.y < 0.0 else (rect.end.y - inset)
+	# external_x: a borda da área MAIS LONGE da linha de gol (o "fundo" da caixa, para o
+	# lado do campo); corner_y: o lado direito dela
+	var external_x: float = rect.end.x if enemy_team == 0 else rect.position.x
+	var corner_y: float = rect.end.y if right.y > 0.0 else rect.position.y
+	var corner := Vector2(external_x, corner_y)
 
-	return field.to_global(Vector2(x, y))
+	# Empurra o centro do círculo para FORA da caixa, a partir desse canto: no eixo x, no
+	# sentido contrário ao ataque (= se afastando do gol); no eixo y, continuando no mesmo
+	# sentido do lado direito (= se afastando do centro da caixa)
+	# safe_margin: nunca menor que o raio (+ uma folga), senão o círculo volta a cobrir
+	# parte da caixa e visualmente parece estar "por dentro" dela.
+	var safe_margin: float = maxf(golden_zone_outside_margin, golden_zone_radius + 20.0)
+	var push: Vector2 = Vector2(-forward.x, signf(corner_y - rect.get_center().y)) * safe_margin
+	return field.to_global(corner + push)
 
 
 func _create_golden_zone() -> bool:
@@ -242,13 +257,10 @@ func _use_44_pant() -> bool:
 
 # ---------- HABILIDADE 2 (AÇÃO GERAL CORRER): ACCELERATE / ONCE MORE ----------
 
-## Suspenso -> Once More (se não estiver em recarga); no chão (ou suspenso com Once More em
-## recarga) -> Accelerate normal. can_run() no player.gd já libera Correr estando suspenso.
+## A corrida do Chigiri é sempre acelerada (1.7x). O Once More agora é uma habilidade à
+## parte (ver _use_once_more()), não uma variante do Correr.
 func start_run() -> void:
-	if height_level == Heights.Level.SUSPENDED and not is_on_cooldown(CD_ONCE_MORE):
-		_start_once_more()
-	else:
-		_start_accelerate()
+	_start_accelerate()
 
 
 func _start_accelerate() -> void:
@@ -260,12 +272,17 @@ func _start_accelerate() -> void:
 	state = State.RUNNING
 
 
-## Avanço reto em direção à bola. Não usa o WASD livre do Correr comum: anda até
-## once_more_dash_range OU até chegar perto da bola (o que vier primeiro).
-func _start_once_more() -> void:
-	runs_this_turn += 1
+## Once More: ação de habilidade própria, só com Chigiri suspenso. Avanço reto em direção à
+## bola (não usa o WASD livre do Correr comum): anda até once_more_dash_range OU até chegar
+## perto da bola (o que vier primeiro).
+func _use_once_more() -> bool:
+	if is_down or height_level != Heights.Level.SUSPENDED:
+		return false
+	if not await play_action(&"once_more"):
+		return false   # ação cancelada (ex: a partida reiniciou)
+	await _run_once_more_dash()
 	start_cooldown(CD_ONCE_MORE, once_more_cooldown)   # entra em recarga mesmo se não alcançar a bola
-	_run_once_more_dash()
+	return true
 
 
 func _run_once_more_dash() -> void:
@@ -292,15 +309,13 @@ func _run_once_more_dash() -> void:
 	await tw.finished
 
 	if reached and is_instance_valid(ball):
+		land()   # dominou a bola: desce para o chão de propósito (libera, por ex., o 44 Pant na hora)
 		ball.release_hover()
 		ball.velocity = Vector2.ZERO
 		ball.vel_z = 0.0
-		ball.height = Heights.to_height(height_level)   # a bola vem para o nível dele, sob controle
+		ball.height = Heights.to_height(height_level)   # a bola vem para o nível dele (agora Chão), sob controle
 		ball.register_touch(self)
 		extra_skill_left += once_more_extra_skills
-
-	state = State.IDLE
-	run_finished.emit()
 
 
 # ---------- HABILIDADE 3: MIAU! / RED PRINCESS ----------
@@ -423,6 +438,7 @@ func _check_slide_hits() -> void:
 func get_skills() -> Array[Dictionary]:
 	var list: Array[Dictionary] = []
 	list.append({"id": SKILL_ZONE, "name": skill_label(_zone_skill_name(), CD_ZONE)})
+	list.append({"id": SKILL_ONCE_MORE, "name": skill_label("Once More", CD_ONCE_MORE)})
 	list.append({"id": SKILL_MIAU, "name": skill_label(_miau_skill_name(), CD_MIAU)})
 	return list
 
@@ -438,6 +454,8 @@ func can_use_skill(skill_id: StringName = &"default") -> bool:
 				ZoneVariant.SHOT:
 					return true   # sem recarga própria
 			return false
+		SKILL_ONCE_MORE:
+			return not is_on_cooldown(CD_ONCE_MORE) and not is_down and height_level == Heights.Level.SUSPENDED
 		SKILL_MIAU:
 			return not is_on_cooldown(CD_MIAU) and get_miau_variant() != MiauVariant.NONE
 	return false
@@ -447,6 +465,8 @@ func use_skill(skill_id: StringName = &"default") -> bool:
 	match skill_id:
 		SKILL_ZONE:
 			return await _use_zone_skill()
+		SKILL_ONCE_MORE:
+			return await _use_once_more()
 		SKILL_MIAU:
 			return await _use_miau_skill()
 	return false
@@ -471,12 +491,50 @@ func _process(delta: float) -> void:
 
 func _draw() -> void:
 	super()
-	if not is_zone_active():
-		return
-	# Círculo dourado translúcido no canto da área do gol inimigo, com uma varredura girando
-	var local_center: Vector2 = to_local(_zone_center) + Vector2(0.0, -height)
-	var sweep: float = Time.get_ticks_msec() / 1000.0 * 2.2
-	draw_arc(local_center, golden_zone_radius, 0.0, TAU, 32, Color(1.0, 0.85, 0.1, 0.22), golden_zone_radius)
-	draw_arc(local_center, golden_zone_radius, 0.0, TAU, 32, Color(1.0, 0.9, 0.3, 0.85), 2.0)
-	draw_line(local_center, local_center + Vector2(cos(sweep), sin(sweep)) * golden_zone_radius,
-		Color(1.0, 0.95, 0.5, 0.7), 2.0)
+
+	if is_zone_active():
+		# Círculo dourado translúcido no canto da área do gol inimigo, com uma varredura girando
+		var local_center: Vector2 = to_local(_zone_center) + Vector2(0.0, -height)
+		var sweep: float = Time.get_ticks_msec() / 1000.0 * 2.2
+		draw_arc(local_center, golden_zone_radius, 0.0, TAU, 32, Color(1.0, 0.85, 0.1, 0.22), golden_zone_radius)
+		draw_arc(local_center, golden_zone_radius, 0.0, TAU, 32, Color(1.0, 0.9, 0.3, 0.85), 2.0)
+		draw_line(local_center, local_center + Vector2(cos(sweep), sin(sweep)) * golden_zone_radius,
+			Color(1.0, 0.95, 0.5, 0.7), 2.0)
+
+	if state == State.RUNNING:
+		_draw_panther(Vector2(0.0, -height))
+
+
+## Pantera vermelha minimalista e translúcida correndo ao lado do Chigiri (silhueta de
+## perfil, só o contorno): aparece enquanto o Accelerate (ação geral Correr) está em
+## andamento. Fica do lado de trás, na direção oposta ao movimento, com um leve balanço.
+func _draw_panther(center: Vector2) -> void:
+	var dir: float = facing
+	if velocity.length() > 1.0:
+		dir = signf(velocity.x) if absf(velocity.x) > 1.0 else dir
+	var t: float = Time.get_ticks_msec() / 1000.0
+	var bob: float = sin(t * 10.0) * 3.0
+	var side_offset := Vector2(-dir * (placeholder_radius + 26.0), -4.0 + bob)
+	var p: Vector2 = center + side_offset
+	var r: float = placeholder_radius * 0.85
+
+	# Contorno de perfil (olhando para -dir, ou seja, correndo "atrás" do Chigiri), em
+	# unidades de raio: cabeça pequena, lombo arqueado, cauda longa curva, pernas simples
+	var shape: Array[Vector2] = [
+		Vector2(1.6, -0.5), Vector2(1.9, -0.75), Vector2(1.7, -0.95),   # orelha
+		Vector2(1.95, -0.6), Vector2(2.1, -0.35), Vector2(1.9, -0.05),  # cabeça/focinho
+		Vector2(1.5, 0.05), Vector2(0.8, -0.35), Vector2(0.1, -0.5),    # lombo arqueado
+		Vector2(-0.6, -0.35), Vector2(-1.1, 0.0), Vector2(-1.6, -0.1),
+		Vector2(-2.2, -0.55), Vector2(-1.9, -0.75), Vector2(-1.5, -0.4), # cauda curva
+		Vector2(-1.0, 0.3), Vector2(-1.1, 0.75), Vector2(-0.85, 0.8),   # pata trás
+		Vector2(-0.65, 0.35), Vector2(-0.1, 0.35), Vector2(-0.05, 0.8),
+		Vector2(0.2, 0.85), Vector2(0.3, 0.4), Vector2(0.8, 0.3),       # pata frente
+		Vector2(1.0, 0.8), Vector2(1.25, 0.85), Vector2(1.3, 0.35),
+		Vector2(1.6, 0.1),
+	]
+	var pts := PackedVector2Array()
+	for sp: Vector2 in shape:
+		pts.append(p + Vector2(sp.x * dir, sp.y) * r)
+	draw_colored_polygon(pts, Color(0.85, 0.1, 0.12, 0.3))
+	pts.append(pts[0])
+	draw_polyline(pts, Color(1.0, 0.25, 0.25, 0.65), 1.5)

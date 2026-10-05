@@ -60,7 +60,7 @@ enum PassVariant { NONE, RABONA, SKY_ARC }
 enum TauntVariant { NONE, TAUNT, SHOT }
 
 @export_group("Rabona Cross / Sky-Arc Pass")
-@export var rabona_range: float = 575.0
+@export var rabona_range: float = 500.0
 @export var sky_arc_range: float = 550.0
 @export_range(0.0, 1.0) var sky_arc_curve_ratio: float = 0.22   # o quanto o Sky-Arc Pass se curva
 @export var sky_arc_bend: float = 1.0                           # lado da curva (+1 / -1)
@@ -318,9 +318,11 @@ func try_counter_slide(attacker: Player) -> bool:
 	if not _taunt_armed or is_down:
 		return false
 	var ball: Ball = _get_ball()
-	# Se a situação mudou (Charles pulou, a bola subiu...) a esquiva não existe mais,
-	# mas continua "armada" até ele realmente disparar uma vez com os dois no chão.
-	if height_level != Heights.Level.GROUND or ball == null or ball.get_level() != Heights.Level.GROUND:
+	# Se a situação mudou (Charles pulou, a bola subiu, rolou para longe...) a esquiva não
+	# existe mais, mas continua "armada" até ele realmente disparar uma vez com a bola nos pés.
+	if height_level != Heights.Level.GROUND or ball == null or ball.is_held() \
+			or ball.get_level() != Heights.Level.GROUND \
+			or global_position.distance_to(ball.global_position) > kick_range:
 		return false
 
 	_taunt_armed = false
