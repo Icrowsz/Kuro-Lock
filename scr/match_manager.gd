@@ -1008,32 +1008,79 @@ func can_use_skill(skill_id: StringName = &"default") -> bool:
 var _skill_pick_cancelled: bool = false
 
 
-## Chamado pelos botões de habilidade do menu. A ação só é gasta se a habilidade
-## foi realmente usada (cancelar a mira, por exemplo, não gasta nada).
+## Mostra no console o gasto das ações de habilidade (para depurar). Desligue depois.
+@export var debug_skill_cost: bool = false
+
+
+## Chamado pelos botões de habilidade do menu.
+## A ação de habilidade é PAGA ANTES de a habilidade executar e DEVOLVIDA se ela for cancelada
+## (Esc / clique direito na mira) ou não tiver sido usada. Assim o gasto não depende de nada
+## que aconteça durante o await (troca de active_player, gol, etc.).
 func do_skill_action(skill_id: StringName = &"default") -> void:
 	if not can_use_skill(skill_id):
 		return
 
 	var actor: Player = active_player
-	var free: bool = actor.skill_is_free(skill_id)   # confere ANTES: usar a habilidade muda o estado
 	var cooldowns_before: Dictionary = actor.snapshot_cooldowns()
+	var payment: Dictionary = _pay_skill_cost(actor, skill_id)
 	_skill_pick_cancelled = false
 	_set_phase(Phase.EXECUTING)
 	var used: bool = await actor.use_skill(skill_id)
+
 	# Rede de segurança: se o jogador cancelou a mira/escolha, a habilidade NÃO foi usada, mesmo que
 	# o script do personagem tenha devolvido true (ou já tenha iniciado a recarga) por engano
-	if _skill_pick_cancelled:
-		_skill_pick_cancelled = false
+	var cancelled: bool = _skill_pick_cancelled
+	_skill_pick_cancelled = false
+	if cancelled:
 		used = false
 		if is_instance_valid(actor):
 			actor.restore_cooldowns(cooldowns_before)
+
 	if not used:
+		_refund_skill_cost(payment)
 		_set_phase(Phase.CHOOSING_ACTION)
 		return
 
-	if not free:
-		_consume_skill()
 	_after_action()
+
+
+## Gasta a ação de habilidade de quem vai usar a habilidade e devolve um "recibo" para
+## _refund_skill_cost. Habilidades gratuitas (skill_is_free) não gastam nada.
+## A ação extra só do jogador (ex: Obsessive Lover) é gasta primeiro e preserva a pool do time.
+func _pay_skill_cost(actor: Player, skill_id: StringName) -> Dictionary:
+	var receipt: Dictionary = {"actor": actor, "kind": &"none"}
+	if actor.skill_is_free(skill_id):
+		if debug_skill_cost:
+			print("[skill] ", skill_id, " é gratuita: nada gasto")
+		return receipt
+	if actor.extra_skill_left > 0:
+		actor.extra_skill_left -= 1
+		receipt["kind"] = &"extra"
+	elif actor == protagonist:
+		protagonist_skill_left = maxi(0, protagonist_skill_left - 1)
+		receipt["kind"] = &"protagonist"
+	else:
+		secondary_skill_left = maxi(0, secondary_skill_left - 1)
+		receipt["kind"] = &"secondary"
+	if debug_skill_cost:
+		print("[skill] ", skill_id, " pagou de '", receipt["kind"], "' -> prot=",
+			protagonist_skill_left, " sec=", secondary_skill_left, " extra=", actor.extra_skill_left)
+	return receipt
+
+
+func _refund_skill_cost(receipt: Dictionary) -> void:
+	var actor: Player = receipt.get("actor") as Player
+	match receipt.get("kind", &"none"):
+		&"extra":
+			if is_instance_valid(actor):
+				actor.extra_skill_left += 1
+		&"protagonist":
+			protagonist_skill_left += 1
+		&"secondary":
+			secondary_skill_left += 1
+	if debug_skill_cost:
+		print("[skill] gasto devolvido (", receipt.get("kind", &"none"), ") -> prot=",
+			protagonist_skill_left, " sec=", secondary_skill_left)
 
 
 ## Mira para uma habilidade de personagem. Devolve a direção (Vector2.ZERO = cancelou).
@@ -1221,15 +1268,11 @@ func _consume_general(action: int = -1) -> void:
 		secondary_general_left -= 1
 
 
+## Mantido por compatibilidade (algum script de personagem pode chamar): gasta uma ação
+## de habilidade de quem está agindo agora. O do_skill_action já paga sozinho, não use os dois.
 func _consume_skill() -> void:
-	# A ação extra só do jogador (ex: Obsessive Lover) é gasta primeiro e preserva a pool do time
-	if active_player.extra_skill_left > 0:
-		active_player.extra_skill_left -= 1
-		return
-	if active_player == protagonist:
-		protagonist_skill_left -= 1
-	else:
-		secondary_skill_left -= 1
+	if active_player != null:
+		_pay_skill_cost(active_player, &"")
 
 
 func _after_action() -> void:

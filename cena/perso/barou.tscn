@@ -1,0 +1,37 @@
+[gd_scene format=3 uid="uid://cbavhn0867lme"]
+
+[ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_7y5xy"]
+[ext_resource type="Texture2D" uid="uid://coyuwd4ow5mfq" path="res://img/barouicon.png" id="2_lu7d7"]
+[ext_resource type="Script" uid="uid://du734206arvny" path="res://scr/perso/barou.gd" id="2_xb4w8"]
+
+[node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_7y5xy")]
+script = ExtResource("2_xb4w8")
+nero_chance = 0.3
+shot_cooldown = 3
+terror_chance = 0.35
+terror_force_mult = 1.2
+villain_chance = 0.4
+villain_force_mult = 1.35
+curve_accel = 150.0
+curve_side = 1.0
+terror_curve_time = 0.5
+villain_curve_time = 3.0
+chop_run_time = 0.35
+chop_delay = 1.0
+chop_cooldown = 2
+nutmeg_chance = 0.3
+nutmeg_max_flight = 3.0
+nutmeg_hop_margin = 14.0
+predator_rounds = 2
+predator_cooldown = 3
+predator_run_bonus = 0.6
+predator_shot_bonus = 0.1
+tyrant_range = 200.0
+tyrant_ball_range = 100.0
+kick_fx = null
+display_name = "Barou Shoei"
+visual_root = NodePath("SprPlayer")
+
+[node name="SprPlayer" parent="." index="1" unique_id=395354675]
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("2_lu7d7")

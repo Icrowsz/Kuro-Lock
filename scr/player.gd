@@ -143,7 +143,11 @@ var next_shot_bonus: float = 0.0
 var next_kick_force_mult: float = 1.0
 ## Ações de habilidade extras só DESTE jogador (ex: Obsessive Lover do Shidou). O MatchManager
 ## gasta estas primeiro, antes da pool do time.
-var extra_skill_left: int = 0
+var extra_skill_left: int = 0:
+	set(v):
+		print(name, " extra_skill_left: ", extra_skill_left, " -> ", v)
+		print_stack()
+		extra_skill_left = v
 ## Ações GERAIS extras só DESTE jogador (ex: Gremlin Taunt do Charles, quando ele desvia de
 ## um Carrinho). Mesma ideia do extra_skill_left, mas para Correr/Pular/Carrinho/Chutar/Passe.
 var extra_general_left: int = 0
