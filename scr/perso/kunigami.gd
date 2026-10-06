@@ -35,7 +35,7 @@ const CD_CLASH: StringName = &"cd_clash"
 const CD_BULK: StringName = &"cd_bulk"
 
 @export_group("Lefty Shot")
-@export_range(0.0, 1.0) var lefty_shot_chance: float = 0.35
+@export_range(0.0, 1.0) var lefty_shot_chance: float = 0.45
 @export var lefty_force_mult: float = 1.2          # "forte": multiplica a força do chute
 @export var lefty_cooldown: int = 3
 
@@ -49,7 +49,7 @@ const CD_BULK: StringName = &"cd_bulk"
 @export var clash_cooldown: int = 3                # recarga compartilhada com o Justice Header
 
 @export_group("Justice Header")
-@export_range(0.0, 1.0) var header_shot_chance: float = 0.35   # chance base do cabeceio (ajuste à vontade)
+@export_range(0.0, 1.0) var header_shot_chance: float = 0.45   # chance base do cabeceio (ajuste à vontade)
 
 @export_group("Bulk Up")
 @export var bulk_actions: int = 2                  # quantas ações são afetadas
@@ -57,7 +57,7 @@ const CD_BULK: StringName = &"cd_bulk"
 @export var bulk_cooldown: int = 3
 @export var bulk_lefty_force_mult: float = 1.25    # força extra do Lefty Shot
 @export var bulk_header_force_mult: float = 1.3    # força extra do Justice Header
-@export_range(0.0, 1.0) var bulk_shot_bonus: float = 0.05    # +5% em Lefty Shot e no Chutar geral
+@export_range(0.0, 1.0) var bulk_shot_bonus: float = 0.10    # +5% em Lefty Shot e no Chutar geral
 @export_range(0.0, 1.0) var bulk_clash_bonus: float = 0.10   # +10% na disputa do Heroic Clash
 @export var bulk_run_bonus: float = 0.7            # segundos a mais no Correr
 @export var bulk_slide_mult: float = 1.4           # o Carrinho vai 40% mais longe

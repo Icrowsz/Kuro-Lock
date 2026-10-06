@@ -35,13 +35,13 @@ enum CurveVariant { NONE, CURVE, PARABOLIC, TRIVELA, CRASH }
 enum GravityVariant { NONE, GRAVITY, PUPPETS, MANGLE }
 
 @export_group("Curve Shot")
-@export_range(0.0, 1.0) var chance_curve: float = 0.35     # Curve Shot e Parabolic Curve
-@export_range(0.0, 1.0) var chance_trivela: float = 0.40
-@export_range(0.0, 1.0) var chance_crash: float = 0.45
+@export_range(0.0, 1.0) var chance_curve: float = 0.45     # Curve Shot e Parabolic Curve
+@export_range(0.0, 1.0) var chance_trivela: float = 0.50
+@export_range(0.0, 1.0) var chance_crash: float = 0.55
 @export var curve_force: float = 60.0               # força do chute (x kick_force_to_speed = px/s)
 @export var curve_aim_range: float = 200          # tamanho da seta de mira
 @export var curve_turn_degrees: float = 70.0        # quanto a trajetória curva (Curve / Parabolic)
-@export var trivela_turn_degrees: float = 80.0      # Trivela e Crash: bem mais curvo
+@export var trivela_turn_degrees: float = 75.0      # Trivela e Crash: bem mais curvo
 @export var curve_duration: float = 1             # por quanto tempo a bola vai fazendo a curva (s)
 @export var curve_preview_length: float = 600.0     # tamanho da linha tracejada da mira
 @export var crash_enemy_radius: float = 90.0        # inimigo "muito próximo" do Rin

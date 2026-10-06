@@ -47,8 +47,8 @@ const CD_INSTINCT: StringName = &"cd_instinct"
 enum ShotVariant { NONE, BON, BEE }
 
 @export_group("Bon! / Bee Shot")
-@export_range(0.0, 1.0) var chance_bon: float = 0.30
-@export_range(0.0, 1.0) var chance_bee: float = 0.40
+@export_range(0.0, 1.0) var chance_bon: float = 0.4
+@export_range(0.0, 1.0) var chance_bee: float = 0.5
 @export var bon_peak_level: Heights.Level = Heights.Level.FLYING   # até onde a bola sobe no Bon!
 @export var bon_max_bounces: int = 1                                # quantas vezes a bola quica depois do Bon! (-1 = sem limite)
 ## Multiplicador da força do chute no Bon! (1.0 = força normal do voleio). Não vale para o Bee Shot.
@@ -60,10 +60,10 @@ enum ShotVariant { NONE, BON, BEE }
 @export var step_max_targets: int = 2
 ## Quantos turnos do time inimigo o atordoamento dura (1 = o próximo turno deles)
 @export var step_stun_turns: int = 1
-@export var step_cooldown: int = 3
+@export var step_cooldown: int = 2
 
 @export_group("Unleash Instinct")
-@export var instinct_cooldown: int = 3
+@export var instinct_cooldown: int = 2
 @export var instinct_extra_generals: int = 1           # ações gerais extras (menos Correr)
 @export var instinct_sticks_ball: bool = true          # a bola fica grudada nele até o fim da rodada
 @export var instinct_stick_extra_rounds: int = 0       # rodadas que a bola continua grudada DEPOIS da rodada do counter

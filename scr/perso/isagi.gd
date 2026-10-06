@@ -33,9 +33,9 @@ const CD_METAVISION: StringName = &"cd_metavision"
 enum ShotVariant { NONE, BACKHEEL, DIRECT, TWO_GUN }
 
 @export_group("Backheel Shot")
-@export_range(0.0, 1.0) var chance_backheel: float = 0.30
-@export_range(0.0, 1.0) var chance_direct: float = 0.35
-@export_range(0.0, 1.0) var chance_two_gun: float = 0.40
+@export_range(0.0, 1.0) var chance_backheel: float = 0.4
+@export_range(0.0, 1.0) var chance_direct: float = 0.45
+@export_range(0.0, 1.0) var chance_two_gun: float = 0.50
 @export var shot_cooldown: int = 2                             # recarga (rodadas), igual para as 3 variantes
 
 @export_group("Pieces")
@@ -45,7 +45,7 @@ enum ShotVariant { NONE, BACKHEEL, DIRECT, TWO_GUN }
 @export var attack_piece_x: float = 0.55
 @export var midfield_piece_x: float = 0.0
 @export var defense_piece_x: float = -0.55
-@export_range(0.0, 1.0) var attack_piece_bonus: float = 0.05   # +5% em qualquer chute
+@export_range(0.0, 1.0) var attack_piece_bonus: float = 0.10   # +5% em qualquer chute
 @export var midfield_run_bonus: float = 1             # segundos a mais no Correr
 @export var pieces_rounds: int = 3                             # duração total em rodadas (contando a atual)
 @export var pieces_cooldown: int = 3                           # recarga, contada a partir do fim do efeito

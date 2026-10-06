@@ -34,13 +34,13 @@ const CD_PREDATOR: StringName = &"cd_predator"    # Predator Eye e Tyrant
 enum ShotVariant { NONE, NERO, TERROR, VILLAIN }
 
 @export_group("Nero / Chute")
-@export_range(0.0, 1.0) var nero_chance: float = 0.30
+@export_range(0.0, 1.0) var nero_chance: float = 0.4
 @export var shot_cooldown: int = 3                 # recarga (rodadas), igual para as 3 variantes
 
 @export_group("Terror / Villain")
-@export_range(0.0, 1.0) var terror_chance: float = 0.35
+@export_range(0.0, 1.0) var terror_chance: float = 0.45
 @export var terror_force_mult: float = 1.2         # "mais força"
-@export_range(0.0, 1.0) var villain_chance: float = 0.40
+@export_range(0.0, 1.0) var villain_chance: float = 0.50
 @export var villain_force_mult: float = 1.35
 @export var curve_accel: float = 150.0             # força lateral que faz a bola curvar (px/s²)
 @export var curve_side: float = 1.0                # 1 ou -1: para que lado a bola curva
@@ -48,17 +48,17 @@ enum ShotVariant { NONE, NERO, TERROR, VILLAIN }
 @export var villain_curve_time: float = 3.0        # curva se mantém até a bola parar (ou este limite)
 
 @export_group("Chop King")
-@export var chop_run_time: float = 0.35           # duração de cada corrida (muito curta)
+@export var chop_run_time: float = 0.6         # duração de cada corrida (muito curta)
 @export var chop_delay: float = 1.0               # espera antes da segunda corrida
 @export var chop_cooldown: int = 2
 
 @export_group("Nutmeg")
-@export_range(0.0, 1.0) var nutmeg_chance: float = 0.30
+@export_range(0.0, 1.0) var nutmeg_chance: float = 0.50
 @export var nutmeg_max_flight: float = 3.0        # trava de segurança: tempo máximo do "atravessar"
 @export var nutmeg_hop_margin: float = 14.0       # distância extra para o jogador pular
 
 @export_group("Predator Eye")
-@export var predator_rounds: int = 2              # duração em rodadas (contando a atual)
+@export var predator_rounds: int = 3              # duração em rodadas (contando a atual)
 @export var predator_cooldown: int = 3
 @export var predator_run_bonus: float = 0.6       # segundos a mais no Correr
 @export_range(0.0, 1.0) var predator_shot_bonus: float = 0.10   # +10% em todos os chutes

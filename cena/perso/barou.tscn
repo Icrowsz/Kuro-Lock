@@ -6,11 +6,11 @@
 
 [node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_7y5xy")]
 script = ExtResource("2_xb4w8")
-nero_chance = 0.3
+nero_chance = 0.4
 shot_cooldown = 3
-terror_chance = 0.35
+terror_chance = 0.45
 terror_force_mult = 1.2
-villain_chance = 0.4
+villain_chance = 0.5
 villain_force_mult = 1.35
 curve_accel = 150.0
 curve_side = 1.0
@@ -19,7 +19,7 @@ villain_curve_time = 3.0
 chop_run_time = 0.35
 chop_delay = 1.0
 chop_cooldown = 2
-nutmeg_chance = 0.3
+nutmeg_chance = 0.5
 nutmeg_max_flight = 3.0
 nutmeg_hop_margin = 14.0
 predator_rounds = 2

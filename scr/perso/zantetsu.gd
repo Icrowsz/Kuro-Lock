@@ -50,6 +50,7 @@ signal dir_chosen(direction: Vector2)
 @export var train_cooldown: int = 2                # recarga (rodadas), compartilhada
 @export var stop_on_enemy_contact: bool = true     # o Bullet Train para ao encostar no inimigo
 @export var contact_margin: float = 8.0            # folga extra além dos dois raios de corpo
+@export var dash_ball_push_speed: float = 600.0   # velocidade leve da bola ao ser tocada no avanço (px/s)
 
 @export_group("Rails")
 @export_range(0.1, 1.0) var rails_length_ratio: float = 0.5  # comprimento do trilho / comprimento do campo
@@ -60,8 +61,8 @@ signal dir_chosen(direction: Vector2)
 @export var rails_run_speed_mult: float = 2.3      # velocidade do Correr dentro do trilho
 
 @export_group("Lefty Dumb / Idiot Volley")
-@export_range(0.0, 1.0) var chance_lefty: float = 0.30
-@export_range(0.0, 1.0) var chance_idiot_volley: float = 0.30
+@export_range(0.0, 1.0) var chance_lefty: float = 0.40
+@export_range(0.0, 1.0) var chance_idiot_volley: float = 0.45
 @export_range(0.0, 1.0) var rails_shot_bonus: float = 0.05    # +5% dentro do Rails
 @export var kick_cooldown: int = 2                 # recarga (rodadas), igual para as 2 variantes
 @export var curve_total_degrees: float = 25.0      # curva FRACA: quanto a bola entorta no total
@@ -249,6 +250,8 @@ func _set_dash_exceptions(on: bool) -> void:
 
 ## Avanço em linha reta (começa rápido e vai freando; anda "distance" no total).
 ## stop_on_enemy: para ao encostar num inimigo. stop_on_ball: para ao encontrar a bola suspensa.
+## Durante o avanço a colisão física da bola fica pausada: se ele encostar nela, só dá um
+## empurrãozinho leve para a frente (ver _nudge_ball_on_dash).
 ## Devolve {"enemy": Player ou null, "ball": bool}. A altura não muda aqui (quem chama pousa).
 func _run_dash(dir: Vector2, distance: float, duration: float, stop_on_enemy: bool = false,
 		stop_on_ball: bool = false) -> Dictionary:
@@ -260,6 +263,10 @@ func _run_dash(dir: Vector2, distance: float, duration: float, stop_on_enemy: bo
 	face_towards(dir)
 	_set_dash_exceptions(true)
 	var ball: Ball = _get_ball()
+	var ball_was_paused: bool = ball.collisions_paused if ball != null else false
+	if ball != null:
+		ball.collisions_paused = true   # a bola não é empurrada pela física com a velocidade do dash
+	var nudged: bool = false
 	var peak_speed: float = 2.0 * distance / duration
 	var elapsed: float = 0.0
 
@@ -273,6 +280,9 @@ func _run_dash(dir: Vector2, distance: float, duration: float, stop_on_enemy: bo
 		var before: Vector2 = global_position
 		move_and_slide()
 
+		if not nudged and ball != null and is_instance_valid(ball):
+			nudged = _nudge_ball_on_dash(ball, before, dir)
+
 		if stop_on_enemy:
 			var contact: Dictionary = _find_enemy_contact(before, global_position)
 			if not contact.is_empty():
@@ -284,10 +294,29 @@ func _run_dash(dir: Vector2, distance: float, duration: float, stop_on_enemy: bo
 			break
 
 	velocity = Vector2.ZERO
+	if ball != null and is_instance_valid(ball):
+		ball.collisions_paused = ball_was_paused
 	_set_dash_exceptions(false)
 	_dashing = false
 	queue_redraw()
 	return result
+
+
+## Encostou na bola durante o avanço (mesmo nível de altura)? Se sim, ela ganha só um
+## empurrão leve para a frente e passa a ignorar o Zantetsu até parar: ele não a empurra de novo.
+## Devolve true se houve contato.
+func _nudge_ball_on_dash(ball: Ball, from: Vector2, dir: Vector2) -> bool:
+	if ball.is_held() or ball.hovering or ball.get_level() != height_level:
+		return false
+	var reach: float = ball.collision_radius + body_radius
+	var entry: Vector2 = _segment_circle_entry(from, global_position, ball.global_position, reach)
+	if entry == Vector2.INF:
+		return false
+	ball.global_position = global_position + dir * reach   # encostada na frente dele
+	ball.register_touch(self)
+	ball.velocity = dir * dash_ball_push_speed
+	ball.ignore_player_until_stopped(self)
+	return true
 
 
 # ---------- 1. BULLET TRAIN ----------

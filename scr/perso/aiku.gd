@@ -44,8 +44,8 @@ const CD_WALL: StringName = &"cd_wall"
 @export var lunge_dash_time: float = 0.25       # duração do "bote" até perto do inimigo
 @export var lunge_stop_distance: float = 40.0   # até onde o Aiku chega perto do inimigo
 @export var lunge_leash_range: float = 160.0    # Aiku se afastar além disso solta o inimigo antes da hora
-@export var lunge_rounds: int = 3               # Snake Lunge (chão): rodadas totalmente travado
-@export var bloom_rounds: int = 2               # Bloom (suspenso/voando): rodadas com a habilidade travada
+@export var lunge_rounds: int = 2               # Snake Lunge (chão): rodadas totalmente travado
+@export var bloom_rounds: int = 1               # Bloom (suspenso/voando): rodadas com a habilidade travada
 @export var lunge_cooldown: int = 3             # recarga, contada a partir do FIM do efeito (as 2 variantes compartilham)
 
 @export_group("Viper Tackle")
@@ -55,14 +55,14 @@ const CD_WALL: StringName = &"cd_wall"
 @export var viper_hit_radius: float = 60.0       # alcance para derrubar inimigos e "encontrar" a bola
 @export var viper_ball_pass_range: float = 350.0 # alcance do passe (igual à ação Passe, só que menor)
 @export var viper_weak_kick_speed: float = 600.0 # força do "chute fraco" (bola suspensa, pós-QTE)
-@export_range(0.0, 1.0) var viper_weak_kick_chance: float = 0.20
+@export_range(0.0, 1.0) var viper_weak_kick_chance: float = 0.3
 @export var viper_cooldown: int = 2              # não especificado no pedido original; ajuste à vontade
 
 @export_group("Serpent Wall")
 @export var wall_range: float = 230.0            # alcance para alcançar a bola suspensa/voando
 @export var wall_jump_time: float = 0.2          # duração do salto até a bola
 @export var wall_weak_kick_speed: float = 300.0
-@export_range(0.0, 1.0) var wall_weak_kick_chance: float = 0.3
+@export_range(0.0, 1.0) var wall_weak_kick_chance: float = 0.4
 @export var wall_cooldown: int = 2               
 
 @export_group("Visual do chute")

@@ -66,7 +66,7 @@ enum WingsVariant { NONE, BLOCK, STEAL }
 @export var assault_cooldown: int = 2                  # igual para as 3 variantes
 @export var aerial_rise_time: float = 0.45             # tempo até a bola chegar ao nível Voando
 @export var aerial_fall_time: float = 0.45             # tempo da descida até o aliado
-@export_range(0.0, 1.0) var dive_bomb_chance: float = 0.40
+@export_range(0.0, 1.0) var dive_bomb_chance: float = 0.50
 @export_range(0.0, 90.0) var dive_bomb_curve_deg: float = 40.0   # o quanto a trajetória faz a curva (graus)
 @export var dive_bomb_curve_time: float = 0.7          # em quanto tempo a bola faz a curva
 @export var dive_bomb_bend: float = 1.0                # lado da curva (+1 / -1)

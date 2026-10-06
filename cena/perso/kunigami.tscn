@@ -6,7 +6,7 @@
 
 [node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_xsmtf")]
 script = ExtResource("2_eup2v")
-lefty_shot_chance = 0.35
+lefty_shot_chance = 0.45
 lefty_force_mult = 1.2
 lefty_cooldown = 3
 clash_win_chance = 0.7
@@ -16,13 +16,13 @@ clash_push_distance = 160.0
 clash_push_time = 0.35
 stun_rounds = 2
 clash_cooldown = 3
-header_shot_chance = 0.35
+header_shot_chance = 0.45
 bulk_actions = 2
 bulk_rounds = 2
 bulk_cooldown = 3
 bulk_lefty_force_mult = 1.25
 bulk_header_force_mult = 1.3
-bulk_shot_bonus = 0.05
+bulk_shot_bonus = 0.1
 bulk_clash_bonus = 0.1
 bulk_run_bonus = 0.7
 bulk_slide_mult = 1.4

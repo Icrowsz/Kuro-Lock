@@ -1,0 +1,30 @@
+[gd_scene format=3 uid="uid://d06agr5ifmyo3"]
+
+[ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_mshyg"]
+[ext_resource type="Script" uid="uid://btobmnhcic4n7" path="res://scr/perso/raichi.gd" id="2_goh3g"]
+[ext_resource type="Texture2D" uid="uid://cmsdyt2ltx014" path="res://img/raichiicon.png" id="2_pwr3a"]
+
+[node name="Player" unique_id=1241627939 instance=ExtResource("1_mshyg")]
+script = ExtResource("2_goh3g")
+stalk_range = 160.0
+stalk_penalty = 0.05
+stalk_penalty_sexy = 0.1
+stalk_rounds = 2
+stalker_cooldown = 3
+dog_cooldown = 2
+radius_range = 260.0
+radius_cast_range = 350.0
+radius_rounds = 3
+radius_cooldown = 3
+radius_slow = 0.9
+radius_slow_sexy = 1.2
+radius_area_mult_sexy = 1.35
+sexy_rounds = 3
+sexy_cooldown = 3
+sexy_run_bonus = 0.7
+sexy_slide_mult = 1.3
+kick_fx = null
+
+[node name="SprPlayer" parent="." index="1" unique_id=395354675]
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("2_pwr3a")

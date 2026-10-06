@@ -68,14 +68,14 @@ enum MiauVariant { NONE, MIAU, RED_PRINCESS }
 @export_group("Golden Zone / 44 Pant")
 @export var golden_zone_rounds: int = 2
 @export var golden_zone_cooldown: int = 0
-@export var golden_zone_radius: float = 70.0
+@export var golden_zone_radius: float = 90.0
 ## O quanto o centro do círculo fica empurrado para FORA da caixa, a partir do canto externo
 ## (quanto maior, mais longe do canto — "mais à esquerda e mais embaixo" ao mesmo tempo, já
 ## que essa é a direção diagonal pra fora do canto). PRECISA ser maior que golden_zone_radius,
 ## senão o círculo volta a sobrepor a caixa. Dá pra ajustar aqui OU direto no Inspector da
 ## cena (o valor salvo na cena tem prioridade sobre este padrão do script).
 @export var golden_zone_outside_margin: float = 180.0
-@export_range(0.0, 1.0) var chance_44_pant: float = 0.40
+@export_range(0.0, 1.0) var chance_44_pant: float = 0.5
 ## Inverte o lado da zona, se "direita" saiu do lado errado na sua tela (ver nota no topo)
 @export var golden_zone_flip_side: bool = false
 

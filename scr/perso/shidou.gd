@@ -41,9 +41,9 @@ const CD_OBSESSIVE: StringName = &"cd_shidou_obsessive"
 enum ShotVariant { NONE, KABLAMO, DRAGON, BIG_BANG }
 
 @export_group("Kablamo / Dragon Drive / Big Bang Drive")
-@export_range(0.0, 1.0) var chance_kablamo: float = 0.30
-@export_range(0.0, 1.0) var chance_dragon: float = 0.35
-@export_range(0.0, 1.0) var chance_big_bang: float = 0.45
+@export_range(0.0, 1.0) var chance_kablamo: float = 0.40
+@export_range(0.0, 1.0) var chance_dragon: float = 0.45
+@export_range(0.0, 1.0) var chance_big_bang: float = 0.55
 @export var shot_cooldown: int = 3                       # recarga (rodadas), igual para as 3 variantes
 @export var kablamo_force_mult: float = 1.6              # o Kablamo é um chute "forte": multiplica a força do chute no chão
 @export var kablamo_curve_total_deg: float = 12.0        # curva "bem pouca": desvio total da bola
@@ -54,7 +54,7 @@ enum ShotVariant { NONE, KABLAMO, DRAGON, BIG_BANG }
 
 @export_group("Demonic Rush / Draconic Header")
 @export var rush_speed_mult: float = 1.4                  # quantas vezes mais veloz que o Correr normal
-@export_range(0.0, 1.0) var chance_header: float = 0.40
+@export_range(0.0, 1.0) var chance_header: float = 0.50
 @export var rush_cooldown: int = 2                       # recarga compartilhada com o Draconic Header
 
 @export_group("Obsessive Lover / Hater")

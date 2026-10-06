@@ -78,7 +78,7 @@ enum TauntVariant { NONE, TAUNT, SHOT }
 
 @export_group("Tricheur's Metavision")
 @export var metavision_rounds: int = 3                # rodadas depois da atual
-@export var metavision_range: float = 400.0            # alcance da redução de chance (e do "radar")
+@export var metavision_range: float = 230.0            # alcance da redução de chance (e do "radar")
 @export_range(0.0, 1.0) var metavision_enemy_shot_penalty: float = 0.10   # 0.10 = -10% na chance de gol dos chutes inimigos
 @export var metavision_extra_ally_skills: int = 1      # ações de habilidade extras para os Secundários
 @export var metavision_cooldown: int = 3               # recarga, contada a partir do fim do efeito

@@ -12,8 +12,8 @@ extends Node2D
 ##    turnos, ou seja, team_count turnos terminando). Se alguém interagir com a bola nesse
 ##    tempo (chute, passe, carrinho, empurrão...), o preparo recomeça.
 ##    Passado o tempo, o goleiro SALTA na bola e a segura.
-## 2) Com a bola nas mãos, repete o ciclo: espera o mesmo tempo e LANÇA a bola para um
-##    aliado aleatório de longo alcance (preferindo quem está fora da área).
+## 2) Com a bola nas mãos, LANÇA a bola para um aliado aleatório de longo alcance assim que
+##    começa o turno do PRÓPRIO time do goleiro (na rodada seguinte à defesa/agarrada).
 ##    A bola vai no nível VOANDO (jogadores adversários SUSPENSOS, que pularam, podem
 ##    interceptar) e, ao chegar no aliado, cai no CHÃO.
 ## 3) Chute em direção ao gol (ação Chutar, habilidade ou carrinho): ao entrar na área
@@ -27,9 +27,9 @@ enum State { IDLE, PREPARING, DIVING, HOLDING, THROWING }
 @export var team: int = 0
 
 @export_group("Preparo e lançamento")
-@export var prepare_rounds: int = 0           # rodadas de preparo (antes de saltar e antes de lançar)
+@export var prepare_rounds: int = 1           # rodadas de preparo (antes de saltar e antes de lançar)
 @export var throw_range: float = 900.0         # alcance do lançamento (px)
-@export var throw_speed: float = 700.0         # velocidade da bola no ar (px/s)
+@export var throw_speed: float = 1000.0        # velocidade da bola no ar (px/s)
 @export var throw_rise_time: float = 0.2       # tempo para a bola subir ao nível Voando
 @export var throw_land_time: float = 0.25      # tempo da queda ao chegar no aliado
 @export var intercept_radius: float = 40.0     # adversário suspenso a esta distância intercepta
@@ -45,7 +45,7 @@ enum State { IDLE, PREPARING, DIVING, HOLDING, THROWING }
 
 @export_group("Visual")
 @export var body_radius: float = 20.0
-@export var keeper_color: Color = Color(0.98, 0.82, 0.15)
+@export var keeper_color: Color = Color(1.0, 1.0, 1.0, 1.0)
 
 var state: State = State.IDLE:
 	set(value):
@@ -85,6 +85,7 @@ func _late_setup() -> void:
 	global_position = _home_position()
 	ball.was_reset.connect(_on_ball_reset)
 	if manager:
+		manager.turn_started.connect(_on_turn_started)
 		manager.turn_ended.connect(_on_turn_ended)
 		manager.match_ended.connect(_on_match_ended)
 	else:
@@ -204,21 +205,22 @@ func _turns_needed() -> int:
 	var turns_per_round: int = manager.team_count if manager else 2
 	return maxi(1, prepare_rounds) * turns_per_round
 
-
 func _on_turn_ended(_ended_team: int) -> void:
-	match state:
-		State.PREPARING:
-			_turns_left -= 1
-			if _turns_left > 0:
-				return
-			if _ball_in_area() and not ball.is_held():
-				_start_catch(false)
-			else:
-				state = State.IDLE
-		State.HOLDING:
-			_turns_left -= 1
-			if _turns_left <= 0:
-				_throw_ball()
+	if state != State.PREPARING:
+		return
+	_turns_left -= 1
+	if _turns_left > 0:
+		return
+	if _ball_in_area() and not ball.is_held():
+		_start_catch(false)
+	else:
+		state = State.IDLE
+
+
+## Começou o turno de um time: se o goleiro está com a bola e este é o time dele, lança agora
+func _on_turn_started(started_team: int) -> void:
+	if state == State.HOLDING and started_team == team:
+		_throw_ball()
 
 
 # ---------- DISPUTA DO CHUTE ----------
@@ -300,7 +302,6 @@ func _catch_ball() -> void:
 	global_position = ball.global_position
 	ball.clear_touches()  # a posse recomeça do zero: próximo toque é de quem receber
 	ball.hold(self)
-	_turns_left = _turns_needed()
 	state = State.HOLDING
 	_play_jump()
 	if not _catch_forced:
@@ -326,7 +327,7 @@ func _throw_ball() -> void:
 	_say("Goleiro do %s lança a bola!" % _team_name(team))
 
 	var start: Vector2 = ball.global_position
-	var duration: float = clampf(start.distance_to(_landing_point(target, start)) / throw_speed, 0.6, 2.5)
+	var duration: float = clampf(start.distance_to(_landing_point(target, start)) / throw_speed, 0.4, 2.0)
 	ball.trail_enabled = true
 
 	# Voo: a bola vai ao aliado no nível Voando
