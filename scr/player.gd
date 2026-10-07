@@ -127,6 +127,7 @@ var character_id: String = "base"
 
 var state: State = State.IDLE
 var run_time_left: float = 0.0
+var _run_total: float = 1.0   # duração total da corrida atual (já com bônus/penalidades), para o anel
 ## Quantas vezes já usou Correr / Carrinho neste turno (o MatchManager zera no começo do turno do time)
 var runs_this_turn: int = 0
 var slides_this_turn: int = 0
@@ -362,13 +363,14 @@ func _finish_aim(direction: Vector2) -> void:
 ## Move livremente com WASD por run_duration segundos
 func start_run() -> void:
 	runs_this_turn += 1
-	run_time_left = run_duration + run_time_bonus
+	run_time_left = maxf(0.0, (run_duration + run_time_bonus) * get_run_time_mult())
+	_run_total = maxf(run_time_left, 0.001)
 	state = State.RUNNING
 
 
 func _process_run(delta: float) -> void:
-	var dir := Input.get_vector("move_left", "move_right", "move_up", "move_down")
-	velocity = dir * move_speed
+	var dir: Vector2 = _get_run_input()
+	velocity = dir * move_speed * get_run_speed_mult()
 	move_and_slide()
 
 	run_time_left -= delta
@@ -378,6 +380,49 @@ func _process_run(delta: float) -> void:
 		state = State.IDLE
 		queue_redraw()
 		run_finished.emit()
+
+
+## Direção que o jogador está pedindo durante o Correr. Sobrescreva para mudar os controles
+## (ex: Zombie Dribble do Lorenzo inverte WASD).
+func _get_run_input() -> Vector2:
+	return Input.get_vector("move_left", "move_right", "move_up", "move_down")
+
+
+## Multiplicador de velocidade / de tempo do Correr vindo de habilidades de ADVERSÁRIOS
+## (ex: Yo.. do Lorenzo). Quem aplica entra no grupo "control_sources" e implementa
+## run_speed_mult_on(p) / run_time_mult_on(p) (1.0 = sem efeito).
+func get_run_speed_mult() -> float:
+	var mult: float = 1.0
+	for src in get_tree().get_nodes_in_group("control_sources"):
+		if src != self and src.has_method("run_speed_mult_on"):
+			mult *= float(src.run_speed_mult_on(self))
+	return mult
+
+
+func get_run_time_mult() -> float:
+	var mult: float = 1.0
+	for src in get_tree().get_nodes_in_group("control_sources"):
+		if src != self and src.has_method("run_time_mult_on"):
+			mult *= float(src.run_time_mult_on(self))
+	return mult
+
+
+## Alguma habilidade de um adversário (ex: Ace Eater do Lorenzo) impede este jogador de
+## receber passes agora? Quem aplica implementa blocks_pass_to(p) -> bool.
+func is_pass_blocked() -> bool:
+	for src in get_tree().get_nodes_in_group("control_sources"):
+		if src != self and src.has_method("blocks_pass_to") and src.blocks_pass_to(self):
+			return true
+	return false
+
+
+## A bola avisa aqui sempre que ESTE jogador faz um chute com chance de gol (qualquer chute,
+## de habilidade ou não). Quem aplica efeitos reativos (ex: Cemetery do Lorenzo) implementa
+## on_opponent_shot_attempt(shooter).
+func on_shot_attempt() -> void:
+	for src in get_tree().get_nodes_in_group("control_sources"):
+		if src != self and src.has_method("on_opponent_shot_attempt"):
+			src.on_opponent_shot_attempt(self)
 
 
 # ---------- AÇÃO GERAL: PULAR ----------
@@ -1310,7 +1355,7 @@ func _draw() -> void:
 
 	# Tempo restante da corrida
 	if state == State.RUNNING:
-		var frac: float = clampf(run_time_left / (run_duration + run_time_bonus), 0.0, 1.0)
+		var frac: float = clampf(run_time_left / _run_total, 0.0, 1.0)
 		draw_arc(Vector2.ZERO, ring_radius + 8.0, -PI / 2.0, -PI / 2.0 + TAU * frac, 40, Color.CYAN, 3.0)
 
 	# Alcance do passe (círculo em volta de quem passa) e companheiros alcançáveis

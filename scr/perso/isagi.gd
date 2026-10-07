@@ -54,7 +54,7 @@ enum ShotVariant { NONE, BACKHEEL, DIRECT, TWO_GUN }
 
 @export_group("Metavision")
 @export var metavision_rounds: int = 3                         # rodadas depois da atual
-@export_range(0.0, 1.0) var metavision_bonus: float = 0.05     # +5% em qualquer chute
+@export_range(0.0, 1.0) var metavision_bonus: float = 0.10     # +5% em qualquer chute
 @export var metavision_extra_ally_skills: int = 1              # ações de habilidade extras para os Secundários
 @export var metavision_cooldown: int = 3                       # recarga, contada a partir do fim do efeito
 

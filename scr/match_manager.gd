@@ -473,6 +473,9 @@ func _on_player_clicked(player: Player) -> void:
 		if player != active_player:
 			if can_pass_to(active_player, player, pass_variant):
 				_execute_pass(player)
+			elif player.is_pass_blocked():
+				pass_hint = "%s está marcado e não pode receber passes!" % player.get_display_name()
+				state_changed.emit()
 			else:
 				pass_hint = "%s está fora do alcance!" % player.get_display_name()
 				state_changed.emit()
@@ -903,6 +906,35 @@ func _run_high_pass(passer: Player, target: Player, ball: Ball) -> void:
 	pass_completed.emit(passer, target)
 
 
+## Versão do passe alto para HABILIDADES (ex: Chilling Pass / No Look Cross do Hiori):
+## mesmo comportamento do passe alto comum (_run_high_pass) — sobe a Voando no meio do
+## caminho, pousa no alvo a Suspenso quando o turno do time voltar, cai sozinha se
+## ninguém tocar — mas com animação própria, aura (fx) e um alcance que não precisa ser
+## o high_pass_range padrão (cada habilidade tem o seu).
+func run_skill_high_pass(passer: Player, target: Player, ball: Ball, range_px: float,
+		anim: StringName = &"", fx: KickFX = null) -> void:
+	passer.face_towards(target.global_position - passer.global_position)
+	var pass_anim: StringName = anim if anim != &"" else Player.ANIM_PASS_HIGH
+	if not await passer.play_action(pass_anim, Player.ANIM_PASS_HIGH):
+		return   # ação cancelada (ex: a partida reiniciou)
+
+	ball.register_touch(passer)  # o passe alto não usa kick(), então registra o toque aqui
+	_pass_origin = passer.global_position
+	_pass_max_range = range_px
+	_pass_aim_point = target.global_position
+	_spawn_pass_marker(passer.team, _pass_aim_point, ball)
+
+	var midpoint: Vector2 = (ball.global_position + _pass_aim_point) * 0.5
+	var tween: Tween = ball.hover_to(midpoint, Heights.FLYING_HEIGHT, high_pass_flight_time)
+	if fx:
+		ball.play_fx(fx)
+	await tween.finished
+	_pass_stage = PassStage.FLYING
+	_pass_team = passer.team
+	_pass_target = target
+	pass_completed.emit(passer, target)
+
+
 ## Onde o passe alto pousa: no alvo, se ele ainda está dentro do alcance (medido de onde o
 ## passe saiu). Se ele se afastou demais, a bola cai onde o alvo estava quando o passe saiu.
 func _pass_landing_point() -> Vector2:
@@ -984,6 +1016,8 @@ func pass_range_for(variant: PassVariant, passer: Player = null) -> float:
 ## O alvo é companheiro (outro jogador do time) e está dentro do alcance da variante?
 func can_pass_to(passer: Player, target: Player, variant: PassVariant) -> bool:
 	if target == passer or target.team != passer.team:
+		return false
+	if target.is_pass_blocked():   # ex: marcado pelo Ace Eater do Lorenzo
 		return false
 	return passer.global_position.distance_to(target.global_position) <= pass_range_for(variant, passer)
 

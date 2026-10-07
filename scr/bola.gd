@@ -456,6 +456,9 @@ func hold(by: Node2D) -> void:
 func _set_shot(by: Node2D, chance: float) -> void:
 	pending_shot_chance = chance
 	shot_team = (by as Player).team if by is Player else -1
+	# Avisa o jogador que chutou (efeitos reativos, ex: Cemetery do Lorenzo). Passes (NO_SHOT) não contam.
+	if chance >= 0.0 and by is Player:
+		(by as Player).on_shot_attempt()
 
 
 ## A bola atravessa este jogador (sem colidir) até parar ou outro jogador tocar nela.

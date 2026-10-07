@@ -61,8 +61,8 @@ enum GravityVariant { NONE, GRAVITY, PUPPETS, MANGLE }
 
 @export_group("Destroyer Mode")
 @export var destroyer_rounds: int = 3               # duração total em rodadas (contando a atual)
-@export var destroyer_cooldown: int = 3             # recarga, contada a partir do fim do efeito
-@export var typing_time: float = 5.0                # Opposite Direction: tempo para digitar
+@export var destroyer_cooldown: int = 2             # recarga, contada a partir do fim do efeito
+@export var typing_time: float = 3.0                # Opposite Direction: tempo para digitar
 @export var typing_words: Array[String] = ["DEVORAR", "DESTRUIR", "ANIRAP", "DESTROÇAR", "MATAR", "EGOISTA"]
 
 @export_group("Visual do chute")

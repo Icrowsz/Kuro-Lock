@@ -1,0 +1,44 @@
+[gd_scene format=3 uid="uid://dqe3v7t3uqrfw"]
+
+[ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_lsvxa"]
+[ext_resource type="Script" uid="uid://dbnq6q5a6ixem" path="res://scr/perso/lorenzo.gd" id="2_2280n"]
+[ext_resource type="Texture2D" uid="uid://c5ocjsajlys71" path="res://img/lorenzoicon.png" id="2_ahf8w"]
+[ext_resource type="Texture2D" uid="uid://clnnoev3m6vwi" path="res://img/mvps/lorenzo.jpg" id="3_2280n"]
+
+[node name="Player" unique_id=1241627939 instance=ExtResource("1_lsvxa")]
+script = ExtResource("2_2280n")
+cooldown_after_effect = true
+zombie_ball_range = 90.0
+zombie_cooldown = 2
+dribble_ball_offset = 30.0
+undead_range = 300.0
+undead_ball_range = 110.0
+buh_aim_range = 220.0
+buh_distance = 300.0
+buh_duration = 0.35
+buh_hit_radius = 50.0
+buh_stun_rounds = 1
+yo_range = 260.0
+yo_dash_time = 0.25
+yo_stop_distance = 40.0
+yo_leash_range = 300.0
+yo_rounds = 3
+yo_shot_penalty = 0.1
+yo_speed_mult = 0.4
+yo_run_time_mult = 0.5
+yo_cooldown = 2
+intercept_range = 230.0
+intercept_dash_time = 0.2
+intercept_pass_range = 650.0
+ace_range = 1800.0
+ace_rounds = 3
+ace_shot_penalty = 0.15
+ace_cooldown = 3
+kick_fx = null
+skill_icons = {}
+display_name = "Don Lorenzo"
+mvp_image = ExtResource("3_2280n")
+
+[node name="SprPlayer" parent="." index="1" unique_id=395354675]
+scale = Vector2(0.14, 0.14)
+texture = ExtResource("2_ahf8w")

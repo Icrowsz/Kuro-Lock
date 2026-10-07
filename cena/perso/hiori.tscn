@@ -1,0 +1,35 @@
+[gd_scene format=3 uid="uid://blohii31xjvcb"]
+
+[ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_0m4lv"]
+[ext_resource type="Script" uid="uid://bmcwg88idcawk" path="res://scr/perso/hiori.gd" id="2_6tajc"]
+[ext_resource type="Texture2D" uid="uid://dp0nj3hwsey0e" path="res://img/hioriicon.png" id="2_sts3e"]
+
+[node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_0m4lv")]
+script = ExtResource("2_6tajc")
+chilling_pass_range = 525.0
+no_look_cross_range = 575.0
+pass_cooldown = 2
+glacial_cut_duration = 0.9
+glacial_cut_speed_mult = 1.3
+ultrasadist_range = 550.0
+ultrasadist_qte_fail_range_mult = 0.5
+ultrasadist_qte_fail_angle = 35.0
+glacial_cooldown = 3
+metavision_rounds = 3
+metavision_run_bonus = 1.0
+metavision_self_shot_bonus = 0.08
+metavision_assist_shot_bonus = 0.08
+metavision_cooldown = 3
+frost_guard_reach = 80.0
+frost_guard_force = 110.0
+frost_guard_cooldown = 2
+cryo_shot_chance = 0.3
+cryo_shot_cooldown = 2
+kick_fx = null
+skill_icons = {}
+display_name = "Hiori Yo"
+visual_root = NodePath("SprPlayer")
+
+[node name="SprPlayer" parent="." index="1" unique_id=395354675]
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("2_sts3e")

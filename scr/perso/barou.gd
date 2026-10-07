@@ -48,8 +48,8 @@ enum ShotVariant { NONE, NERO, TERROR, VILLAIN }
 @export var villain_curve_time: float = 3.0        # curva se mantém até a bola parar (ou este limite)
 
 @export_group("Chop King")
-@export var chop_run_time: float = 0.6         # duração de cada corrida (muito curta)
-@export var chop_delay: float = 1.0               # espera antes da segunda corrida
+@export var chop_run_time: float = 0.7         # duração de cada corrida (muito curta)
+@export var chop_delay: float = 0.4              # espera antes da segunda corrida
 @export var chop_cooldown: int = 2
 
 @export_group("Nutmeg")
@@ -101,7 +101,7 @@ func _ready() -> void:
 ## Vermelho e preto (cor principal do personagem); as partículas são pedaços escuros
 func _make_kick_fx() -> KickFX:
 	var fx := KickFX.new()
-	fx.color = Color(0.85, 0.05, 0.05)
+	fx.color = Color(0.775, 0.038, 0.04, 1.0)
 	fx.trail_width = 16.0
 	fx.particle_color = Color(0.1, 0.1, 0.1)
 	fx.amount = 26
