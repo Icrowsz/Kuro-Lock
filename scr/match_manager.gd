@@ -97,6 +97,12 @@ const PASS_VARIANT_NAMES := {
 @export var reset_positions_after_goal: bool = true   # depois de um gol, todo mundo volta à posição da formação
 @export var reposition_time: float = 0.8              # quanto tempo os jogadores levam para voltar (0 = na hora)
 
+@export_group("MVP")
+@export var mvp_goal_points: int = 1          # pontos por gol (gol contra não pontua)
+@export var mvp_assist_points: int = 1        # pontos por assistência
+@export var mvp_win_points: int = 1           # pontos para cada jogador do time vencedor
+@export var mvp_golden_goal_points: int = 2   # gol de ouro (o que desempata na prorrogação) vale isto
+
 @export_group("Ações do Protagonista")
 @export var protagonist_general_actions: int = 3
 @export var protagonist_skill_actions: int = 1
@@ -136,6 +142,13 @@ var goal_log: Array[Dictionary] = []
 var match_over: bool = false
 var winner: int = -1
 
+## Estatísticas por jogador para o MVP (chave = instance id do Player).
+## Cada entrada: {name, character_id, team, goals, assists, golden, win, points, image}
+var player_stats: Dictionary = {}
+## O MVP da partida (vazio = ninguém pontuou). Preenchido ANTES do match_ended ser emitido.
+## Mesmas chaves de uma entrada de player_stats.
+var mvp: Dictionary = {}
+
 ## Passe em escolha (lido pelo menu) e passe alto em andamento
 var pass_variant: PassVariant = PassVariant.GROUND
 var pass_hint: String = ""   # aviso na escolha do alvo (ex: "fora do alcance")
@@ -152,7 +165,7 @@ var active_player: Player = null   # quem vai executar a próxima ação
 
 ## Habilidade esperando o jogador clicar num alvo (ver pick_ally_for_skill)
 var _picking_skill_target: bool = false
-var _skill_target_actor: Player = null
+var _skill_target_actor: Node2D = null   # Player (habilidade) ou Goalkeeper (lançamento)
 var _skill_target_range: float = 0.0
 ## true = só companheiros contam como alvo válido; false = só inimigos
 var _skill_target_same_team: bool = true
@@ -265,6 +278,8 @@ func return_to_formation() -> void:
 	winner = -1
 	scores.fill(0)
 	goal_log.clear()
+	player_stats.clear()
+	mvp = {}
 	round_number = 0
 	turns_played = 0
 	current_half = 1
@@ -338,6 +353,11 @@ func _begin_turn() -> void:
 	secondary_general_left = 0
 	secondary_skill_left = 0
 	turn_started.emit(current_team)
+	# O lançamento do goleiro começa no turn_started: espera ele terminar (e, se o goleiro deixa
+	# o jogador escolher o alvo, espera a escolha) antes de abrir o turno
+	await _wait_for_keepers()
+	if match_over:
+		return
 	_set_phase(Phase.CHOOSING_PROTAGONIST)
 
 
@@ -1178,11 +1198,12 @@ func _remove_skill_point_marker() -> void:
 
 
 func _try_pick_skill_target(player: Player) -> void:
-	var actor: Player = _skill_target_actor
+	var actor: Node2D = _skill_target_actor
 	if actor == null or player == actor:
 		return
-	var team_ok: bool = (player.team == actor.team) if _skill_target_same_team \
-		else (player.team != actor.team)
+	var actor_team: int = actor.get("team")
+	var team_ok: bool = (player.team == actor_team) if _skill_target_same_team \
+		else (player.team != actor_team)
 	if not team_ok:
 		return
 	if _skill_target_filter.is_valid() and not _skill_target_filter.call(player):
@@ -1333,6 +1354,13 @@ func _any_keeper_busy() -> bool:
 	return false
 
 
+func _any_keeper_waiting_for_player() -> bool:
+	for k: Goalkeeper in get_tree().get_nodes_in_group("goalkeepers"):
+		if k.is_waiting_for_player():
+			return true
+	return false
+
+
 ## Espera os goleiros terminarem o que estão fazendo (salto, lançamento...)
 func _wait_for_keepers() -> void:
 	if not _any_keeper_busy():
@@ -1341,7 +1369,9 @@ func _wait_for_keepers() -> void:
 	var time_left: float = keeper_wait_timeout
 	while _any_keeper_busy() and not match_over and time_left > 0.0:
 		await get_tree().physics_frame
-		time_left -= get_physics_process_delta_time()
+		# Esperando o jogador escolher o alvo do lançamento: o tempo limite não corre
+		if not _any_keeper_waiting_for_player():
+			time_left -= get_physics_process_delta_time()
 	# Trava de segurança: se algo emperrar, o jogo segue
 	for k: Goalkeeper in get_tree().get_nodes_in_group("goalkeepers"):
 		if k.is_busy():
@@ -1351,6 +1381,30 @@ func _wait_for_keepers() -> void:
 ## Os goleiros avisam o que fizeram por aqui; o HUD mostra
 func announce_keeper(text: String, team: int) -> void:
 	keeper_event.emit(text, team)
+
+
+## Goleiro que deixa o jogador escolher para quem lançar (ex: Fukaku). Mostra o alcance, destaca
+## os companheiros que dá para alcançar e espera o clique. Devolve o escolhido (null = cancelou:
+## clique direito ou Esc, ou a partida acabou). Não mexe na fase: quem chama (o fluxo dos
+## goleiros) já a deixa em "goleiros agindo".
+func pick_throw_target(keeper: Goalkeeper, range_px: float) -> Player:
+	_picking_skill_target = true
+	_skill_target_actor = keeper
+	_skill_target_range = range_px
+	_skill_target_same_team = true
+	_skill_target_filter = Callable()
+	pass_hint = ""
+	keeper.range_preview = range_px
+	for other: Player in get_tree().get_nodes_in_group("players"):
+		other.is_pass_option = other.team == keeper.team \
+			and keeper.global_position.distance_to(other.global_position) <= range_px
+	var target: Player = await skill_target_picked
+	_picking_skill_target = false
+	_skill_target_actor = null
+	if is_instance_valid(keeper):
+		keeper.range_preview = 0.0
+	_hide_pass_preview()
+	return target
 
 
 # ---------- GOLS E PLACAR ----------
@@ -1379,6 +1433,7 @@ func _on_goal_scored(scoring_team: int) -> void:
 		"round": round_number,
 	}
 	goal_log.append(goal)
+	_record_goal_stats(scorer, assist, own_goal)
 	goal_scored.emit(goal)
 	state_changed.emit()
 
@@ -1394,6 +1449,7 @@ func _on_goal_scored(scoring_team: int) -> void:
 func _end_match(winning_team: int) -> void:
 	match_over = true
 	winner = winning_team
+	mvp = _compute_mvp()
 	if _picking_skill_target:
 		skill_target_picked.emit(null)   # a habilidade que esperava um alvo termina sem efeito
 	if _picking_skill_point:
@@ -1405,6 +1461,69 @@ func _end_match(winning_team: int) -> void:
 	_clear_roles()
 	_set_phase(Phase.MATCH_OVER)
 	match_ended.emit(winner)
+
+
+# ---------- MVP ----------
+
+## Ficha de estatísticas do jogador (cria na primeira vez que ele aparece)
+func _stats_for(p: Player) -> Dictionary:
+	var key: int = p.get_instance_id()
+	if not player_stats.has(key):
+		player_stats[key] = {
+			"name": p.get_display_name(),
+			"character_id": p.character_id,
+			"team": p.team,
+			"goals": 0,
+			"assists": 0,
+			"golden": false,
+			"win": 0,
+			"points": 0,
+			"image": p.get_mvp_image(),
+		}
+	return player_stats[key]
+
+
+## Soma os pontos de um gol. Na prorrogação qualquer gol decide o jogo (gol de ouro),
+## então o autor leva mvp_golden_goal_points em vez de mvp_goal_points.
+func _record_goal_stats(scorer: Player, assist: Player, own_goal: bool) -> void:
+	if scorer != null and not own_goal:
+		var s: Dictionary = _stats_for(scorer)
+		s["goals"] += 1
+		s["golden"] = in_extra_time
+		s["points"] += mvp_golden_goal_points if in_extra_time else mvp_goal_points
+	if assist != null:
+		var a: Dictionary = _stats_for(assist)
+		a["assists"] += 1
+		a["points"] += mvp_assist_points
+
+
+## Fim de jogo: todo jogador do time vencedor ganha o ponto da vitória e o MVP é
+## quem somou mais. Empate de pontos: mais gols, depois mais assistências, depois
+## quem é do time vencedor. Devolve {} se ninguém pontuou (ex: empate sem gols).
+func _compute_mvp() -> Dictionary:
+	if winner >= 0:
+		for p in get_team_players(winner):
+			var s: Dictionary = _stats_for(p)
+			s["win"] = mvp_win_points
+			s["points"] += mvp_win_points
+
+	var best: Dictionary = {}
+	for entry: Dictionary in player_stats.values():
+		if entry["points"] <= 0:
+			continue
+		if best.is_empty() or _is_better_mvp(entry, best):
+			best = entry
+	return best
+
+
+func _is_better_mvp(a: Dictionary, b: Dictionary) -> bool:
+	if a["points"] != b["points"]:
+		return a["points"] > b["points"]
+	if a["goals"] != b["goals"]:
+		return a["goals"] > b["goals"]
+	if a["assists"] != b["assists"]:
+		return a["assists"] > b["assists"]
+	return a["team"] == winner and b["team"] != winner
 
 
 # ---------- UTIL ----------

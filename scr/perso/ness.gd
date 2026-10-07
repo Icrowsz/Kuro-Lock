@@ -85,6 +85,11 @@ enum SpellVariant { NONE, ALOHOMORA, DEPULSO, EXPELLIARMUS }
 ## Aura + partículas rosa. Vazio = usa o estilo padrão do Ness (veja _make_kick_fx)
 @export var kick_fx: KickFX
 
+@export_group("Descrição (hover)")
+## Imagem de cada habilidade no balão do menu. Chaves: alohomora, confundo, reparo, leviosa, descendo, arresto_momentum.
+## Sem imagem, o balão aparece só com o texto.
+@export var skill_icons: Dictionary = {}
+
 ## Arresto Momentum: até esta rodada (inclusive) a bola fica presa. -1 = nenhum feitiço ativo
 var _arresto_until_round: int = -1
 var _arresto_interactions: int = 0
@@ -596,6 +601,57 @@ func use_skill(skill_id: StringName = &"default") -> bool:
 		SKILL_ARRESTO:
 			return await _use_arresto()
 	return false
+
+
+# ---------- DESCRIÇÃO (balão do menu, ver action_menu.gd) ----------
+
+func _pct(value: float) -> int:
+	return int(round(value * 100.0))
+
+
+func get_skill_info(skill_id: StringName) -> Dictionary:
+	var title: String = ""
+	var text: String = ""
+	match skill_id:
+		SKILL_ALOHOMORA:
+			title = _spell_name()
+			text = ("Feitiço que muda sozinho conforme a situação da bola:\n"
+				+ "• Alohomora (bola ao alcance do pé): passe mágico em zigue-zague para um aliado a até %d px. A bola sobe ao nível suspenso no meio do trajeto e fica pairando no aliado.\n"
+				+ "• Depulso (bola suspensa a até %d px): Ness pula até ela e a repele na direção contrária à que ela vinha.\n"
+				+ "• Expelliarmus (bola fora do alcance): Ness corre até um inimigo a até %d px e tira %d%% da chance de gol dos chutes dele por %d turnos dele, ou até Ness se afastar mais de %d px.\n"
+				+ "Recarga: %d rodadas, compartilhada entre as três.") % [
+				int(alohomora_range), int(depulso_range), int(expelliarmus_range),
+				_pct(expelliarmus_shot_penalty), expelliarmus_rounds, int(expelliarmus_break_distance),
+				alohomora_cooldown]
+		SKILL_CONFUNDO:
+			title = "Confundo"
+			text = ("Embaralha as habilidades de um inimigo a até %d px: os botões dele viram \"???\" e trocam de ordem por %d turno(s) dele, a partir do próximo.\n"
+				+ "Recarga: %d rodadas, dividida com o Reparo.") % [
+				int(confundo_range), confundo_rounds, confundo_cooldown]
+		SKILL_REPARO:
+			title = "Reparo"
+			text = ("Só aparece quando algum aliado tem habilidade em recarga. Tira %d rodada(s) da recarga de até %d habilidades de um aliado a até %d px.\n"
+				+ "Recarga: %d rodadas, dividida com o Confundo.") % [
+				reparo_rounds, reparo_skills, int(reparo_range), confundo_cooldown]
+		SKILL_LEVIOSA:
+			title = "Leviosa"
+			text = ("Sobe a bola um nível de altura (chão → suspensa → voando). A bola precisa estar solta (fora da mão do goleiro) e a até %d px de Ness. Ela fica pairando no novo nível até o fim do turno do time.\n"
+				+ "Recarga: %d rodada(s), dividida com Descendo e Arresto Momentum.") % [
+				int(ball_spell_range), spell_cooldown]
+		SKILL_DESCENDO:
+			title = "Descendo"
+			text = ("Só aparece com a bola fora do chão. Desce a bola um nível de altura (voando → suspensa → chão), com os mesmos requisitos do Leviosa (bola solta e a até %d px). Se ela não chega ao chão, fica pairando até o fim do turno do time.\n"
+				+ "Recarga: %d rodada(s), dividida com Leviosa e Arresto Momentum.") % [
+				int(ball_spell_range), spell_cooldown]
+		SKILL_ARRESTO:
+			title = "Arresto Momentum"
+			text = ("Só aparece com a bola voando (mesmos requisitos do Leviosa). Prende a bola ali por %d rodadas, ou até um aliado interagir com ela; os adversários não conseguem tocá-la. Depois ela cai direto para o chão.\n"
+				+ "Recarga: %d rodada(s), dividida com Leviosa e Descendo.") % [
+				arresto_rounds, spell_cooldown]
+		_:
+			return {}
+	var icon: Texture2D = skill_icons.get(String(skill_id), skill_icons.get(skill_id)) as Texture2D
+	return {"title": title, "description": text, "icon": icon}
 
 
 # ---------- PARTIDA NOVA ----------

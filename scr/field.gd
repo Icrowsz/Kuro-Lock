@@ -79,7 +79,8 @@ func _ready() -> void:
 	_build_nets()
 
 
-## Cria um goleiro para cada time que ainda não tem um (você pode colocar os seus na cena)
+## Cria um goleiro para cada time que ainda não tem um (você pode colocar os seus na cena).
+## O estilo vem do KeeperRoster (escolhido na tela de formação; padrão = goleiro comum).
 func _spawn_goalkeepers() -> void:
 	if not spawn_goalkeepers or ball == null:
 		return
@@ -89,7 +90,7 @@ func _spawn_goalkeepers() -> void:
 	for t in 2:
 		if has_keeper.has(t):
 			continue
-		var keeper := Goalkeeper.new()
+		var keeper: Goalkeeper = KeeperRoster.create(KeeperRoster.choice_for(t))
 		keeper.team = t
 		ball.get_parent().add_child(keeper)  # mesma camada de profundidade da bola e dos jogadores
 

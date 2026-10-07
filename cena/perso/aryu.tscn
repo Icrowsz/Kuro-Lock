@@ -1,0 +1,42 @@
+[gd_scene format=3 uid="uid://b3ostnej5bsky"]
+
+[ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_uwgvi"]
+[ext_resource type="Texture2D" uid="uid://djcyw7lpuvggj" path="res://img/aryuicon.png" id="2_m11k7"]
+[ext_resource type="Script" uid="uid://c8raj8w0tm156" path="res://scr/perso/aryu.gd" id="2_ywvi1"]
+
+[node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_uwgvi")]
+script = ExtResource("2_ywvi1")
+header_range = 150.0
+header_power = 300.0
+header_peak_level = 1
+header_dash_time = 0.22
+block_range = 260.0
+block_dash_time = 0.25
+block_push_distance = 120.0
+header_cooldown = 2
+glam_range = 90.0
+glam_grab_time = 0.15
+glam_ball_offset = 22.0
+glam_trigger_radius = 75.0
+glam_dodge_distance = 150.0
+glam_dodge_time = 0.25
+glam_cooldown = 2
+star_area_margin = 120.0
+star_goal_gap = 40.0
+star_cover_ratio = 0.6
+star_dash_time = 0.3
+shining_penalty = 0.1
+shooting_penalty = 0.12
+star_rounds = 2
+star_cooldown = 3
+kick_fx = null
+display_name = "Aryu Jyubei"
+slide_ball_power = 800.0
+shot_chance_default = 0.3
+shot_chance_volley = 0.35
+shot_chance_flying = 0.4
+visual_root = NodePath("SprPlayer")
+
+[node name="SprPlayer" parent="." index="1" unique_id=395354675]
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("2_m11k7")

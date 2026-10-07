@@ -99,6 +99,11 @@ enum MiauVariant { NONE, MIAU, RED_PRINCESS }
 ## Aura + partículas dos chutes/passes de habilidade. Vazio = usa o estilo padrão (veja _make_kick_fx)
 @export var kick_fx: KickFX
 
+@export_group("Descrição (hover)")
+## Imagem de cada habilidade no balão do menu. Chaves: golden_zone, once_more, miau.
+## Sem imagem, o balão aparece só com o texto.
+@export var skill_icons: Dictionary = {}
+
 ## Golden Zone ativa até esta rodada (-1 = inativa) e onde ela está (posição global)
 var _zone_until_round: int = -1
 var _zone_center: Vector2 = Vector2.ZERO
@@ -468,6 +473,59 @@ func use_skill(skill_id: StringName = &"default") -> bool:
 		SKILL_MIAU:
 			return await _use_miau_skill()
 	return false
+
+
+# ---------- DESCRIÇÃO (balão do menu, ver action_menu.gd) ----------
+
+func _pct(value: float) -> int:
+	return int(round(value * 100.0))
+
+
+func get_skill_info(skill_id: StringName) -> Dictionary:
+	var title: String = ""
+	var text: String = ""
+	match skill_id:
+		SKILL_ZONE:
+			var cd_text: String = ""
+			if golden_zone_cooldown > 0:
+				cd_text = "\nRecarga da Golden Zone: %d rodadas." % golden_zone_cooldown
+			var create_text: String = "Golden Zone: cria um círculo dourado fora da pequena área do gol adversário, no canto externo do lado direito de quem ataca. Dura %d rodadas." % golden_zone_rounds
+			var pant_text: String = "44 Pant: com a zona ativa, Chigiri DENTRO dela, no chão e com a bola ao alcance, dá um chute com %d%% de chance de gol (bola alta tem QTE). Sem recarga própria: dá para repetir enquanto a zona durar." % _pct(chance_44_pant)
+			match get_zone_variant():
+				ZoneVariant.CREATE:
+					title = "Golden Zone"
+					text = create_text
+				ZoneVariant.SHOT:
+					title = "44 Pant"
+					text = pant_text
+				_:
+					title = "Golden Zone / 44 Pant"
+					text = create_text + "\n" + pant_text
+			text += cd_text
+		SKILL_ONCE_MORE:
+			title = "Once More"
+			text = ("Só com Chigiri suspenso. Ele avança reto em direção à bola (até %d px). Se alcançar, domina a bola, desce ao chão e ganha +%d ação de habilidade extra. Se não alcançar, continua suspenso.\n"
+				+ "Recarga: %d rodadas, mesmo se não alcançar a bola.") % [
+				int(once_more_dash_range), once_more_extra_skills, once_more_cooldown]
+		SKILL_MIAU:
+			var miau_text: String = "Miau! (bola longe): um Carrinho mais longo (%d px) na direção mirada. Derruba inimigos no chão e não gasta o Carrinho geral do turno." % int(miau_slide_distance)
+			var princess_text: String = "Red Princess (bola perto, no chão ou suspensa): cruzamento alto para um aliado entre %d e %d px de distância. A bola sobe e desce no chão, nos pés dele." % [
+				int(red_princess_min_range), int(red_princess_range)]
+			match get_miau_variant():
+				MiauVariant.RED_PRINCESS:
+					title = "Red Princess"
+					text = princess_text
+				MiauVariant.MIAU:
+					title = "Miau!"
+					text = miau_text
+				_:
+					title = "Miau! / Red Princess"
+					text = miau_text + "\n" + princess_text
+			text += "\nSó com Chigiri no chão. Recarga: %d rodadas, compartilhada entre as duas." % miau_cooldown
+		_:
+			return {}
+	var icon: Texture2D = skill_icons.get(String(skill_id), skill_icons.get(skill_id)) as Texture2D
+	return {"title": title, "description": text, "icon": icon}
 
 
 # ---------- PARTIDA NOVA ----------

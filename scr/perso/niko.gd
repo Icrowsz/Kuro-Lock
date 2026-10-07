@@ -58,6 +58,11 @@ const TOWER_COLOR := Color(0.3, 1.0, 0.5)
 ## Aura + partículas do Tactical. Vazio = usa o estilo padrão do Niko (veja _make_kick_fx)
 @export var kick_fx: KickFX
 
+@export_group("Descrição (hover)")
+## Imagem de cada habilidade no balão do menu. Chaves: watchtower, tactical, metavision.
+## Sem imagem, o balão aparece só com o texto.
+@export var skill_icons: Dictionary = {}
+
 
 # ---------- Torre ----------
 var _tower: _TowerZone = null
@@ -411,6 +416,39 @@ func use_skill(skill_id: StringName = &"default") -> bool:
 				return false
 			return _use_metavision()
 	return false
+
+
+# ---------- DESCRIÇÃO (balão do menu, ver action_menu.gd) ----------
+
+func _pct(value: float) -> int:
+	return int(round(value * 100.0))
+
+
+func get_skill_info(skill_id: StringName) -> Dictionary:
+	var title: String = ""
+	var text: String = ""
+	match skill_id:
+		SKILL_TOWER:
+			title = "Body Core" if is_tower_active() else "Watchtower"
+			text = ("Watchtower: cria uma torre de observação onde Niko está. Dentro do círculo verde (raio de %d px), INIMIGOS não podem usar habilidades. Dura %d rodadas ou até Niko sair do círculo. Recarga: %d rodadas, contadas a partir do fim da torre.\n"
+				+ "Body Core (aparece no lugar do Watchtower enquanto a torre existe): Niko escolhe um inimigo dentro da torre, vai até ele e os dois disputam fisicamente (%d%% Niko x %d%% oponente). Se Niko vencer, o inimigo fica sem ações gerais por %d rodadas, ou até Niko se afastar mais de %d px dele. O Body Core não tem recarga própria.") % [
+				int(tower_radius), tower_rounds, tower_cooldown, _pct(body_core_win_chance),
+				_pct(1.0 - body_core_win_chance), body_core_rounds, int(body_core_break_distance)]
+		SKILL_TACTICAL:
+			title = "Tactical"
+			text = ("Passe rasteiro curvo para um aliado a até %d px. Vale com a bola em qualquer altura (chão, suspensa ou voando), desde que Niko consiga alcançá-la.\n"
+				+ "Recarga: %d rodadas.") % [
+				int(tactical_range), tactical_cooldown]
+		SKILL_METAVISION:
+			title = "Metavision"
+			text = ("Por %d rodadas depois da atual: +%d ação(ões) de habilidade extra para os aliados, o Pular de Niko chega ao nível voando e os chutes que vieram de um passe dele ganham +%d%%.\n"
+				+ "Recarga: %d rodadas, contadas a partir do fim do efeito.") % [
+				metavision_rounds, metavision_extra_ally_skills, _pct(metavision_pass_bonus),
+				metavision_cooldown]
+		_:
+			return {}
+	var icon: Texture2D = skill_icons.get(String(skill_id), skill_icons.get(skill_id)) as Texture2D
+	return {"title": title, "description": text, "icon": icon}
 
 
 # ---------- PARTIDA NOVA ----------

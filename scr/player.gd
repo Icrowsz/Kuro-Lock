@@ -64,6 +64,9 @@ const ACTION_TIMEOUT: float = 3.0
 @export var skill_name: String = "Habilidade"
 ## Nome mostrado no jogo (placar de gols, menu...). Vazio = usa o nome do nó.
 @export var display_name: String = ""
+## Imagem do MVP deste personagem (aparece no resumo final se ele for o MVP).
+## Vazio = procura res://assets/mvp/<character_id>.png (ou .webp/.jpg/.jpeg/.svg).
+@export var mvp_image: Texture2D
 
 @export_group("Pular")
 @export var jump_rise_time: float = 0.25
@@ -264,6 +267,18 @@ func refresh_art() -> void:
 
 func get_display_name() -> String:
 	return display_name if display_name != "" else String(name)
+
+
+## Imagem do MVP: a do Inspector (mvp_image) ou, se vazia, o arquivo
+## res://assets/mvp/<character_id>.<extensão>. null = o personagem não tem imagem.
+func get_mvp_image() -> Texture2D:
+	if mvp_image != null:
+		return mvp_image
+	for ext in ["png", "webp", "jpg", "jpeg", "svg"]:
+		var path: String = "res://assets/mvp/%s.%s" % [character_id, ext]
+		if ResourceLoader.exists(path):
+			return load(path) as Texture2D
+	return null
 
 
 ## A cor vem do TeamStyle (o jogador escolhe na tela de formação)

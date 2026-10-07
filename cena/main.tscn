@@ -46,6 +46,7 @@ margin = 500.0
 
 [node name="MatchManager" type="Node2D" parent="." unique_id=1461380594]
 script = ExtResource("1_3tt73")
+reposition_time = 0.1
 volley_qte_time_per_key = 0.8
 ground_pass_range = 350.0
 high_pass_range = 450.0

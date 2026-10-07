@@ -10,21 +10,22 @@ extends RefCounted
 
 const CHARACTERS: Array[Dictionary] = [
 	{"id": "base", "name": "Personagem Base", "scene": "res://cena/player.tscn"},
-	{"id": "isagi", "name": "Isagi", "scene": "res://cena/perso/isagi.tscn"},
+	{"id": "aiku", "name": "Aiku", "scene": "res://cena/perso/aiku.tscn"},
+	{"id": "aryu", "name": "Aryu", "scene": "res://cena/perso/aryu.tscn"},
 	{"id": "bachira", "name": "Bachira", "scene": "res://cena/perso/bachira.tscn"},
-	{"id": "rin", "name": "Rin", "scene": "res://cena/perso/rin.tscn"},
-	{"id": "shidou", "name": "Shidou", "scene": "res://cena/perso/shidou.tscn"},
 	{"id": "barou", "name": "Barou", "scene": "res://cena/perso/barou.tscn"},
-	{"id": "kunigami", "name": "Kunigami", "scene": "res://cena/perso/kunigami.tscn"},
+	{"id": "charles", "name": "Charles", "scene": "res://cena/perso/charles.tscn"},
 	{"id": "chigiri", "name": "Chigiri", "scene": "res://cena/perso/chigiri.tscn"},
-	{"id": "zantetsu", "name": "Zantetsu", "scene": "res://cena/perso/zantetsu.tscn"},
+	{"id": "isagi", "name": "Isagi", "scene": "res://cena/perso/isagi.tscn"},
+	{"id": "karasu", "name": "Karasu", "scene": "res://cena/perso/karasu.tscn"},
+	{"id": "kunigami", "name": "Kunigami", "scene": "res://cena/perso/kunigami.tscn"},
+	{"id": "kurona", "name": "Kurona", "scene": "res://cena/perso/kurona.tscn"},
+	{"id": "ness", "name": "Ness", "scene": "res://cena/perso/ness.tscn"},
 	{"id": "niko", "name": "Niko", "scene": "res://cena/perso/niko.tscn"},
 	{"id": "raichi", "name": "Raichi", "scene": "res://cena/perso/raichi.tscn"},
-	{"id": "karasu", "name": "Karasu", "scene": "res://cena/perso/karasu.tscn"},
-	{"id": "aiku", "name": "Aiku", "scene": "res://cena/perso/aiku.tscn"},
-	{"id": "kurona", "name": "Kurona", "scene": "res://cena/perso/kurona.tscn"},
-	{"id": "charles", "name": "Charles", "scene": "res://cena/perso/charles.tscn"},
-	{"id": "ness", "name": "Ness", "scene": "res://cena/perso/ness.tscn"},
+	{"id": "rin", "name": "Rin", "scene": "res://cena/perso/rin.tscn"},
+	{"id": "shidou", "name": "Shidou", "scene": "res://cena/perso/shidou.tscn"},
+	{"id": "zantetsu", "name": "Zantetsu", "scene": "res://cena/perso/zantetsu.tscn"},
 ]
 
 

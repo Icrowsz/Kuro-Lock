@@ -84,6 +84,11 @@ enum WingsVariant { NONE, BLOCK, STEAL }
 ## Aura + partículas dos chutes/passes de habilidade. Vazio = usa o estilo padrão (veja _make_kick_fx)
 @export var kick_fx: KickFX
 
+@export_group("Descrição (hover)")
+## Imagem de cada habilidade no balão do menu. Chaves: corvine_feint, aerial_pass, wings_block.
+## Sem imagem, o balão aparece só com o texto.
+@export var skill_icons: Dictionary = {}
+
 ## Corvine Feint está armado, esperando um Carrinho inimigo disparar o counter
 var _feint_armed: bool = false
 ## Bônus do Corvine Feint vale até o fim desta rodada (-1 = inativo)
@@ -691,6 +696,63 @@ func use_skill(skill_id: StringName = &"default") -> bool:
 		SKILL_WINGS:
 			return await _use_wings_skill()
 	return false
+
+
+# ---------- DESCRIÇÃO (balão do menu, ver action_menu.gd) ----------
+
+func _pct(value: float) -> int:
+	return int(round(value * 100.0))
+
+
+func get_skill_info(skill_id: StringName) -> Dictionary:
+	var title: String = ""
+	var text: String = ""
+	match skill_id:
+		SKILL_FEINT:
+			title = "Corvine Feint"
+			text = ("Com a bola ao alcance (no chão ou suspenso, nunca voando), Karasu entra em pose de counter. Se um inimigo acertar um Carrinho nele, ele salta por cima, a bola fica grudada nele até o fim da rodada, e ele ganha:\n"
+				+ "• +%d ação de habilidade extra;\n"
+				+ "• +%.1f s no Correr e +%d%% de chance de gol (dele e dos aliados a até %d px) por %d rodadas depois da atual.\n"
+				+ "Se ele for derrubado antes, o counter se desfaz. Recarga: %d rodadas.") % [
+				feint_extra_skills, feint_run_bonus, _pct(feint_shot_bonus), int(feint_ally_range),
+				feint_rounds, feint_cooldown]
+		SKILL_ASSAULT:
+			var aerial_text: String = "Aerial Pass (bola no chão e ao alcance): passe que sobe ao nível Voando e desce no chão, nos pés do aliado escolhido (precisa de um aliado ao alcance do passe alto)."
+			var dive_text: String = "Dive Bomb Assault (Karasu e bola no mesmo nível, suspensos ou voando): chute curvo com %d%% de chance de gol. QTE fácil se suspensos, difícil se voando." % _pct(dive_bomb_chance)
+			var raven_text: String = "Raven Assault (bola longe e Karasu no chão): um Carrinho que derruba inimigos. Você escolhe antes o aliado; se o carrinho encostar na bola, ele acaba ali e Karasu passa rasteiro para esse aliado."
+			match get_assault_variant():
+				AssaultVariant.AERIAL:
+					title = "Aerial Pass"
+					text = aerial_text
+				AssaultVariant.DIVE_BOMB:
+					title = "Dive Bomb Assault"
+					text = dive_text
+				AssaultVariant.RAVEN:
+					title = "Raven Assault"
+					text = raven_text
+				_:
+					title = "Aerial Pass / Dive Bomb / Raven Assault"
+					text = aerial_text + "\n" + dive_text + "\n" + raven_text
+			text += "\nRecarga: %d rodadas, compartilhada entre as três." % assault_cooldown
+		SKILL_WINGS:
+			var block_text: String = "Wings Block (Karasu no chão): agarra os %d inimigos mais próximos (a até %d px) e os impede de usar habilidades por %d rodadas, ou até Karasu se afastar deles. As ações gerais ficam livres." % [
+				wings_max_targets, int(wings_range), wings_rounds]
+			var steal_text: String = "Silent Steal (Karasu suspenso e bola suspensa ou voando a até %d px): ele alcança a bola, a domina e os dois descem até o chão." % int(steal_range)
+			match get_wings_variant():
+				WingsVariant.BLOCK:
+					title = "Wings Block"
+					text = block_text
+				WingsVariant.STEAL:
+					title = "Silent Steal"
+					text = steal_text
+				_:
+					title = "Wings Block / Silent Steal"
+					text = block_text + "\n" + steal_text
+			text += "\nRecarga: %d rodadas, compartilhada entre as duas." % wings_cooldown
+		_:
+			return {}
+	var icon: Texture2D = skill_icons.get(String(skill_id), skill_icons.get(skill_id)) as Texture2D
+	return {"title": title, "description": text, "icon": icon}
 
 
 # ---------- PARTIDA NOVA ----------

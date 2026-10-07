@@ -66,6 +66,11 @@ const CD_BULK: StringName = &"cd_bulk"
 ## Aura + partículas laranjas dos chutes de habilidade. Vazio = usa o estilo padrão (veja _make_kick_fx)
 @export var kick_fx: KickFX
 
+@export_group("Descrição (hover)")
+## Imagem de cada habilidade no balão do menu. Chaves: lefty_shot, heroic_clash, bulk_up.
+## Sem imagem, o balão aparece só com o texto.
+@export var skill_icons: Dictionary = {}
+
 ## Bulk Up: ações que ainda serão afetadas e rodada até a qual vale (-1 = inativo)
 var _bulk_charges: int = 0
 var _bulk_until_round: int = -1
@@ -428,6 +433,56 @@ func _draw_fire_aura(center: Vector2) -> void:
 			PackedVector2Array([base_p + side, base_p - side, tip]),
 			Color(1.0, 0.5, 0.1, 0.45)
 		)
+
+
+# ---------- DESCRIÇÃO (balão do menu, ver action_menu.gd) ----------
+
+func _pct(value: float) -> int:
+	return int(round(value * 100.0))
+
+
+func get_skill_info(skill_id: StringName) -> Dictionary:
+	var title: String = ""
+	var text: String = ""
+	match skill_id:
+		SKILL_LEFTY:
+			title = "Lefty Shot"
+			text = ("Chute forte (%d%% mais força) em direção ao gol adversário, sem mira e sem QTE. %d%% de chance de gol. Funciona com Kunigami no chão ou suspenso e a bola no chão ou suspensa.\n"
+				+ "Recarga: %d rodadas.") % [
+				_pct(lefty_force_mult - 1.0), _pct(lefty_shot_chance), lefty_cooldown]
+		SKILL_CLASH:
+			var clash_text: String = "Heroic Clash: disputa física com um inimigo de pé a até %d px. %d%% de chance de o Kunigami vencer: aí o inimigo é jogado %d px para longe, derrubado e travado (sem ações) por %d rodadas. Se perder, os dois só se chocam." % [
+				int(clash_range), _pct(clash_win_chance), int(clash_push_distance), stun_rounds]
+			var header_text: String = "Justice Header: com Kunigami suspenso e a bola suspensa ou voando perto, cabeceio com mira. %d%% de chance de gol, sem QTE." % _pct(header_shot_chance)
+			if _header_variant_ok():
+				title = "Justice Header"
+				text = header_text
+			elif _has_clash_target():
+				title = "Heroic Clash"
+				text = clash_text
+			else:
+				title = "Heroic Clash / Justice Header"
+				text = clash_text + "\n" + header_text
+			text += "\nRecarga: %d rodadas, compartilhada entre os dois." % clash_cooldown
+		SKILL_BULK:
+			title = "Bulk Up"
+			text = ("Por %d rodadas (contando a atual), as próximas %d ações do Kunigami são reforçadas (o que acabar primeiro):\n"
+				+ "• Lefty Shot: +%d%% de força e +%d%% de chance de gol;\n"
+				+ "• Heroic Clash: +%d%% de chance de vencer;\n"
+				+ "• Justice Header: +%d%% de força;\n"
+				+ "• Correr: +%.1f s;\n"
+				+ "• Pular: sobe até o nível Voando;\n"
+				+ "• Carrinho: desliza %d%% mais longe;\n"
+				+ "• Chutar (geral): +%d%% de chance de gol.\n"
+				+ "Recarga: %d rodadas.") % [
+				bulk_rounds, bulk_actions,
+				_pct(bulk_lefty_force_mult - 1.0), _pct(bulk_shot_bonus),
+				_pct(bulk_clash_bonus), _pct(bulk_header_force_mult - 1.0),
+				bulk_run_bonus, _pct(bulk_slide_mult - 1.0), _pct(bulk_shot_bonus), bulk_cooldown]
+		_:
+			return {}
+	var icon: Texture2D = skill_icons.get(String(skill_id), skill_icons.get(skill_id)) as Texture2D
+	return {"title": title, "description": text, "icon": icon}
 
 
 # ---------- PARTIDA NOVA ----------

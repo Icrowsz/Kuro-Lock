@@ -62,6 +62,11 @@ enum ShotVariant { NONE, BACKHEEL, DIRECT, TWO_GUN }
 ## Aura + partículas dos chutes de habilidade. Vazio = usa o estilo padrão do Isagi (veja _make_kick_fx)
 @export var kick_fx: KickFX
 
+@export_group("Descrição (hover)")
+## Imagem de cada habilidade no balão do menu. Chaves: backheel_shot, pieces, metavision.
+## Sem imagem, o balão aparece só com o texto.
+@export var skill_icons: Dictionary = {}
+
 var _pieces: Array[PieceZone] = []
 ## As peças só aparecem e funcionam depois que o Isagi usa a habilidade Pieces,
 ## e valem até o fim desta rodada (-1 = inativas)
@@ -372,6 +377,43 @@ func use_skill(skill_id: StringName = &"default") -> bool:
 			await play_action(&"metavision")
 			return _use_metavision()
 	return false
+
+
+# ---------- DESCRIÇÃO (balão do menu, ver action_menu.gd) ----------
+
+func _pct(value: float) -> int:
+	return int(round(value * 100.0))
+
+
+func get_skill_info(skill_id: StringName) -> Dictionary:
+	var title: String = ""
+	var text: String = ""
+	match skill_id:
+		SKILL_SHOT:
+			title = _shot_skill_name()
+			text = ("Chute de habilidade. A variante muda sozinha com a altura dele e da bola:\n"
+				+ "• Backheel Shot (os dois no chão): a bola vai na direção CONTRÁRIA da mira. %d%% de chance de gol.\n"
+				+ "• Direct Shot (ele no chão e bola suspensa, ou os dois suspensos): voleio com QTE fácil. %d%%.\n"
+				+ "• Two Gun Volley (ele suspenso/voando e bola voando): voleio voador com QTE difícil. %d%%.\n"
+				+ "Recarga: %d rodadas, compartilhada entre as três.") % [
+				_pct(chance_backheel), _pct(chance_direct), _pct(chance_two_gun), shot_cooldown]
+		SKILL_PIECES:
+			title = "Pieces"
+			text = ("As 3 peças aparecem no campo por %d rodadas e só afetam o Isagi:\n"
+				+ "• Ataque: +%d%% em qualquer chute.\n"
+				+ "• Meio-campo: +%.1f s no Correr.\n"
+				+ "• Defesa: o Pular chega ao nível Voando.\n"
+				+ "Recarga: %d rodadas, contadas a partir do fim do efeito.") % [
+				pieces_rounds, _pct(attack_piece_bonus), midfield_run_bonus, pieces_cooldown]
+		SKILL_METAVISION:
+			title = "Metavision"
+			text = ("Por %d rodadas depois da atual: +%d ação(ões) de habilidade extra para os aliados, +%d%% em qualquer chute e nenhum QTE nos chutes do Isagi.\n"
+				+ "Recarga: %d rodadas, contadas a partir do fim do efeito.") % [
+				metavision_rounds, metavision_extra_ally_skills, _pct(metavision_bonus), metavision_cooldown]
+		_:
+			return {}
+	var icon: Texture2D = skill_icons.get(String(skill_id), skill_icons.get(skill_id)) as Texture2D
+	return {"title": title, "description": text, "icon": icon}
 
 
 # ---------- PARTIDA NOVA ----------

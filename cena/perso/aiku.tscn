@@ -27,6 +27,7 @@ wall_weak_kick_speed = 650.0
 wall_weak_kick_chance = 0.4
 wall_cooldown = 2
 kick_fx = null
+skill_icons = {}
 display_name = "Oliver Aiku"
 visual_root = NodePath("SprPlayer")
 

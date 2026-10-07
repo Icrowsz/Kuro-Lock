@@ -71,6 +71,11 @@ enum ShotVariant { NONE, NERO, TERROR, VILLAIN }
 ## Aura + partículas vermelhas dos chutes. Vazio = usa o estilo padrão (veja _make_kick_fx)
 @export var kick_fx: KickFX
 
+@export_group("Descrição (hover)")
+## Imagem de cada habilidade no balão do menu. Chaves: nero, chop_king, nutmeg, predator_eye.
+## Sem imagem, o balão aparece só com o texto.
+@export var skill_icons: Dictionary = {}
+
 ## Predator Eye vale até o fim desta rodada (-1 = inativo)
 var _predator_until_round: int = -1
 ## Chop King já foi usado e o complemento Nutmeg está esperando
@@ -432,6 +437,59 @@ func use_skill(skill_id: StringName = &"default") -> bool:
 				return await _use_tyrant()
 			return await _use_predator()
 	return false
+
+
+# ---------- DESCRIÇÃO (balão do menu, ver action_menu.gd) ----------
+
+func _pct(value: float) -> int:
+	return int(round(value * 100.0))
+
+
+func get_skill_info(skill_id: StringName) -> Dictionary:
+	var title: String = ""
+	var text: String = ""
+	match skill_id:
+		SKILL_SHOT:
+			var nero_text: String = "Nero (Barou e bola no chão): chute rasteiro, %d%% de chance de gol." % _pct(nero_chance)
+			var terror_text: String = "Terror (os dois suspensos): chute com pequena curva e %d%% mais força. %d%% de chance de gol." % [
+				_pct(terror_force_mult - 1.0), _pct(terror_chance)]
+			var villain_text: String = "Villain (Barou suspenso e bola voando): chute com %d%% mais força e a curva se mantém. %d%% de chance de gol, sem QTE." % [
+				_pct(villain_force_mult - 1.0), _pct(villain_chance)]
+			match get_shot_variant():
+				ShotVariant.TERROR:
+					title = "Terror"
+					text = terror_text
+				ShotVariant.VILLAIN:
+					title = "Villain"
+					text = villain_text
+				ShotVariant.NERO:
+					title = "Nero"
+					text = nero_text
+				_:
+					title = "Nero / Terror / Villain"
+					text = nero_text + "\n" + terror_text + "\n" + villain_text
+			text += "\nRecarga: %d rodadas, compartilhada entre as três." % shot_cooldown
+		SKILL_CHOP:
+			title = "Chop King"
+			text = ("Duas corridas bem curtas (%.1f s cada), com uma pausa de %.1f s entre elas. Não gasta o limite de Correr. Se ao fim Barou alcançar a bola, libera o Nutmeg.\n"
+				+ "Recarga: %d rodadas.") % [chop_run_time, chop_delay, chop_cooldown]
+		SKILL_NUTMEG:
+			title = "Nutmeg"
+			text = "Complemento grátis do Chop King (não gasta ação de habilidade), com a bola ao alcance. Mire o chute: a bola atravessa todos os jogadores, aliados e inimigos (eles saltam). %d%% de chance de gol. Expira se o turno acabar sem usar." % _pct(nutmeg_chance)
+		SKILL_PREDATOR:
+			var effect_text: String = "Por %d rodadas (contando a atual): +%.1f s no Correr e +%d%% de chance de gol em todos os chutes." % [
+				predator_rounds, predator_run_bonus, _pct(predator_shot_bonus)]
+			if _find_tyrant_ally() != null:
+				title = "Tyrant"
+				text = "Tyrant (há um aliado perto da bola): " + effect_text + " Além disso, esse aliado dá um passe rasteiro para Barou."
+			else:
+				title = "Predator Eye"
+				text = effect_text + "\nSe houver um aliado a até %d px dele e perto da bola, vira Tyrant: o aliado ainda passa a bola para o Barou." % int(tyrant_range)
+			text += "\nRecarga: %d rodadas, compartilhada entre as duas." % predator_cooldown
+		_:
+			return {}
+	var icon: Texture2D = skill_icons.get(String(skill_id), skill_icons.get(skill_id)) as Texture2D
+	return {"title": title, "description": text, "icon": icon}
 
 
 # ---------- PARTIDA NOVA ----------

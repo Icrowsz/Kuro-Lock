@@ -87,6 +87,11 @@ enum TauntVariant { NONE, TAUNT, SHOT }
 ## Aura + partículas dos chutes/passes de habilidade. Vazio = usa o estilo padrão (veja _make_kick_fx)
 @export var kick_fx: KickFX
 
+@export_group("Descrição (hover)")
+## Imagem de cada habilidade no balão do menu. Chaves: rabona_cross, gremlin_taunt, metavision_tricheur.
+## Sem imagem, o balão aparece só com o texto.
+@export var skill_icons: Dictionary = {}
+
 ## Gremlin Taunt está armado, esperando um Carrinho inimigo disparar a esquiva
 var _taunt_armed: bool = false
 ## Tricheur's Metavision vale até o fim desta rodada (-1 = inativa)
@@ -467,6 +472,60 @@ func use_skill(skill_id: StringName = &"default") -> bool:
 		SKILL_METAVISION:
 			return await _use_metavision()
 	return false
+
+
+# ---------- DESCRIÇÃO (balão do menu, ver action_menu.gd) ----------
+
+func _pct(value: float) -> int:
+	return int(round(value * 100.0))
+
+
+func get_skill_info(skill_id: StringName) -> Dictionary:
+	var title: String = ""
+	var text: String = ""
+	match skill_id:
+		SKILL_PASS:
+			var rabona_text: String = "Rabona Cross (Charles e bola no chão): passe alto para um LOCAL que você clica no campo (até %d px). A bola paira lá, no nível Suspenso, e cai sozinha se ninguém tocar nela. QTE fácil: errar encurta e desvia o local." % int(rabona_range)
+			var sky_text: String = "Sky-Arc Pass (bola suspensa; Charles no chão ou suspenso): passe longo e curvo para um aliado a até %d px. A bola chega a ele no chão." % int(sky_arc_range)
+			match get_pass_variant():
+				PassVariant.RABONA:
+					title = "Rabona Cross"
+					text = rabona_text
+				PassVariant.SKY_ARC:
+					title = "Sky-Arc Pass"
+					text = sky_text
+				_:
+					title = "Rabona Cross / Sky-Arc Pass"
+					text = rabona_text + "\n" + sky_text
+			text += "\nRecarga: %d rodadas, compartilhada entre os dois." % pass_cooldown
+		SKILL_TAUNT:
+			var taunt_text: String = "Gremlin Taunt (Charles e bola no chão): arma uma esquiva. Se um inimigo acertar um Carrinho nele, Charles salta por cima, ganha 1 ação geral extra para a próxima vez que agir, e a bola fica grudada nele até o fim da rodada."
+			var shot_text: String = "Gremlin Shot (Charles e bola suspensos): chute que desce até o chão, com uma curva fraquinha. QTE fácil, %d%% de chance de gol." % _pct(gremlin_shot_chance)
+			if _taunt_armed:
+				title = "Gremlin Taunt (armada)"
+				text = taunt_text + "\nSe ele for derrubado antes, a esquiva se desfaz."
+			else:
+				match get_taunt_variant():
+					TauntVariant.SHOT:
+						title = "Gremlin Shot"
+						text = shot_text
+					TauntVariant.TAUNT:
+						title = "Gremlin Taunt"
+						text = taunt_text
+					_:
+						title = "Gremlin Taunt / Gremlin Shot"
+						text = taunt_text + "\n" + shot_text
+			text += "\nRecarga: %d rodadas, compartilhada entre as duas." % gremlin_cooldown
+		SKILL_METAVISION:
+			title = "Tricheur's Metavision"
+			text = ("Por %d rodadas depois da atual: +%d ação(ões) de habilidade extra para os Secundários, nenhum QTE nos chutes do Charles, e todo chute INIMIGO dado a até %d px dele perde %d%% de chance de gol.\n"
+				+ "Recarga: %d rodadas, contadas a partir do fim do efeito.") % [
+				metavision_rounds, metavision_extra_ally_skills, int(metavision_range),
+				_pct(metavision_enemy_shot_penalty), metavision_cooldown]
+		_:
+			return {}
+	var icon: Texture2D = skill_icons.get(String(skill_id), skill_icons.get(skill_id)) as Texture2D
+	return {"title": title, "description": text, "icon": icon}
 
 
 # ---------- PARTIDA NOVA ----------

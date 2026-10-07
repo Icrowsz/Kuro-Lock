@@ -72,6 +72,11 @@ enum ShotVariant { NONE, BON, BEE }
 ## Aura + partículas dos chutes de habilidade. Vazio = usa o estilo padrão (veja _make_kick_fx)
 @export var kick_fx: KickFX
 
+@export_group("Descrição (hover)")
+## Imagem de cada habilidade no balão do menu. Chaves: bon, step_overs, unleash_instinct.
+## Sem imagem, o balão aparece só com o texto.
+@export var skill_icons: Dictionary = {}
+
 ## Unleash Instinct está armado, esperando um Carrinho inimigo disparar o counter
 var _instinct_armed: bool = false
 ## A bola está grudada no Bachira até o fim desta rodada (-1 = não está)
@@ -405,6 +410,48 @@ func use_skill(skill_id: StringName = &"default") -> bool:
 		SKILL_INSTINCT:
 			return await _use_instinct()
 	return false
+
+
+# ---------- DESCRIÇÃO (balão do menu, ver action_menu.gd) ----------
+
+func _pct(value: float) -> int:
+	return int(round(value * 100.0))
+
+
+func get_skill_info(skill_id: StringName) -> Dictionary:
+	var title: String = ""
+	var text: String = ""
+	match skill_id:
+		SKILL_SHOT:
+			var bon_text: String = "Bon! (qualquer situação, menos os dois suspensos): chute que leva a bola até o nível Voando, e ela quica só %d vez(es). %d%% de chance de gol. Sem QTE com a bola no chão; com a bola mais alta, vale o QTE do chute comum." % [
+				bon_max_bounces, _pct(chance_bon)]
+			var bee_text: String = "Bee Shot (Bachira e bola os dois suspensos): voleio SEM QTE, com %d%% de chance de gol." % _pct(chance_bee)
+			match get_shot_variant():
+				ShotVariant.BEE:
+					title = "Bee Shot"
+					text = bee_text
+				ShotVariant.BON:
+					title = "Bon!"
+					text = bon_text
+				_:
+					title = "Bon! / Bee Shot"
+					text = bon_text + "\n" + bee_text
+			text += "\nRecarga: %d rodadas, compartilhada entre as duas." % shot_cooldown
+		SKILL_STEP:
+			title = "Step Overs"
+			text = ("Com Bachira e a bola no chão (bola ao alcance), ele faz as passadas e atordoa até %d inimigos no chão a até %d px. Eles ficam sem Correr e sem Carrinho no próximo turno do time deles. Precisa de pelo menos um inimigo por perto.\n"
+				+ "Recarga: %d rodadas.") % [
+				step_max_targets, int(step_range), step_cooldown]
+		SKILL_INSTINCT:
+			title = "Unleash Instinct"
+			text = ("Com a bola nos pés (os dois no chão), Bachira arma um counter. Se um inimigo acertar um Carrinho nele, ele desvia sozinho e ganha %d ação geral extra, que vale para tudo menos Correr." % instinct_extra_generals)
+			if instinct_sticks_ball:
+				text += " A bola também fica grudada nele até o fim da rodada."
+			text += "\nSe ele for derrubado antes, o counter se desfaz. Recarga: %d rodadas." % instinct_cooldown
+		_:
+			return {}
+	var icon: Texture2D = skill_icons.get(String(skill_id), skill_icons.get(skill_id)) as Texture2D
+	return {"title": title, "description": text, "icon": icon}
 
 
 # ---------- PARTIDA NOVA ----------

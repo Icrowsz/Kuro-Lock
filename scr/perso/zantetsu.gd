@@ -77,6 +77,11 @@ signal dir_chosen(direction: Vector2)
 ## Aura + partículas dos chutes. Vazio = usa o estilo padrão do Zantetsu (veja _make_kick_fx)
 @export var kick_fx: KickFX
 
+@export_group("Descrição (hover)")
+## Imagem de cada habilidade no balão do menu. Chaves: bullet_train, a_train, rails, lefty_dumb.
+## Sem imagem, o balão aparece só com o texto.
+@export var skill_icons: Dictionary = {}
+
 # --- estado ---
 var _a_train_ready: bool = false
 var _a_train_until_round: int = -1
@@ -606,6 +611,45 @@ func use_skill(skill_id: StringName = &"default") -> bool:
 				return await _use_idiot_volley()
 			return await _use_lefty_dumb()
 	return false
+
+
+# ---------- DESCRIÇÃO (balão do menu, ver action_menu.gd) ----------
+
+func _pct(value: float) -> int:
+	return int(round(value * 100.0))
+
+
+func get_skill_info(skill_id: StringName) -> Dictionary:
+	var title: String = ""
+	var text: String = ""
+	match skill_id:
+		SKILL_BULLET_TRAIN:
+			title = "Bullet Train"
+			text = ("Avanço (dash) de até %d px na direção escolhida com WASD (diagonais valem). Pode ser usado no chão ou suspenso; se suspenso, ele cai no chão ao fim. Se encostar num inimigo na mesma altura, o avanço para ali e libera o A-Train.\n"
+				+ "Recarga: %d rodadas, compartilhada com o A-Train.") % [
+				int(train_distance), train_cooldown]
+		SKILL_A_TRAIN:
+			title = "A-Train"
+			text = ("Complemento GRATUITO: NÃO gasta ação de habilidade. Só fica disponível depois que o Bullet Train encostou num inimigo. Dá mais um avanço de até %d px, mais curto, numa nova direção, até o fim do turno do time.\n"
+				+ "Recarga: a mesma do Bullet Train (%d rodadas).") % [
+				int(a_train_distance), train_cooldown]
+		SKILL_RAILS:
+			title = "Rails"
+			text = ("Cria um trilho cinza com %d%% do comprimento do campo, centrado em Zantetsu. Ele precisa ficar DENTRO do trilho durante as %d rodadas em que ele existe; se parar fora antes disso, fica atordoado por %d rodada(s), sem ações gerais nem habilidades. Dentro do trilho o Correr é %.1fx mais rápido e Lefty Dumb e Idiot Volley ganham +%d%%.\n"
+				+ "Recarga: %d rodadas.") % [
+				_pct(rails_length_ratio), rails_rounds, rails_stun_rounds, rails_run_speed_mult,
+				_pct(rails_shot_bonus), rails_cooldown]
+		SKILL_KICK:
+			title = _kick_skill_name()
+			text = ("Chute de habilidade com curva fraca. A variante muda sozinha com a altura dele:\n"
+				+ "• Lefty Dumb (ele e a bola no chão): chute rasteiro. %d%% de chance de gol.\n"
+				+ "• Idiot Volley (ele suspenso): pequeno avanço de até %d px ainda suspenso; se encontrar a bola suspensa no caminho, dá um voleio. %d%%.\n"
+				+ "Recarga: %d rodadas, compartilhada entre as duas.") % [
+				_pct(chance_lefty), int(volley_dash_distance), _pct(chance_idiot_volley), kick_cooldown]
+		_:
+			return {}
+	var icon: Texture2D = skill_icons.get(String(skill_id), skill_icons.get(skill_id)) as Texture2D
+	return {"title": title, "description": text, "icon": icon}
 
 
 # ---------- AÇÃO CANCELADA / PARTIDA NOVA ----------

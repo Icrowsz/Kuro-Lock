@@ -20,11 +20,29 @@ extends Node2D
 ##    acontece uma disputa de sorte. A chance de o chute vencer o goleiro vem do chute
 ##    (padrão 30%, voleio 35%, bola voando 40%). Se vencer, a bola segue; se perder, o
 ##    goleiro defende e fica com a bola (e entra no ciclo do item 2).
+##
+## GOLEIROS ESPECIAIS (passivas)
+## Cada time pode ter um estilo de goleiro. Os especiais estendem este script (veja bl_man.gd e
+## renoir.gd) e mexem no comportamento por estes pontos:
+##  - modify_shot_chance(): ajusta a chance de o chute vencer o goleiro, antes do sorteio
+##  - area_extra_depth / area_extra_side: aumentam a área em que ele salta na bola
+##  - throw_range: alcance do lançamento
+##  - on_shot_resolved(beaten) / contest_note() / reset_for_new_match(): para passivas com
+##    estado (Gagamaru)
+##  - lets_player_pick_throw() / _ask_throw_target(): deixam o jogador escolher o alvo do
+##    lançamento (Fukaku)
+##  - art_texture: a imagem do goleiro em campo (veja KeeperRoster.ART_DIR)
+## Para criar um novo, registre-o no KeeperRoster (keeper_roster.gd).
 
 enum State { IDLE, PREPARING, DIVING, HOLDING, THROWING }
 
 ## Time que o goleiro defende (0 = gol da esquerda, 1 = gol da direita)
 @export var team: int = 0
+
+## Qual goleiro é este (a tela de formação usa para trocar). Os especiais definem no _init.
+var keeper_id: String = "base"
+## Nome mostrado nos avisos da partida. Vazio = "Goleiro do <time>".
+var display_name: String = ""
 
 @export_group("Preparo e lançamento")
 @export var prepare_rounds: int = 1           # rodadas de preparo (antes de saltar e antes de lançar)
@@ -43,9 +61,25 @@ enum State { IDLE, PREPARING, DIVING, HOLDING, THROWING }
 @export var hold_height: float = 24.0          # altura da bola nas mãos
 @export var jump_height: float = 45.0          # altura do salto (visual)
 
+@export_group("Área de atuação")
+## Quanto a área em que ele salta na bola cresce em direção ao meio do campo (px)
+@export var area_extra_depth: float = 0.0
+## Quanto ela cresce para os lados (px)
+@export var area_extra_side: float = 0.0
+
 @export_group("Visual")
 @export var body_radius: float = 20.0
 @export var keeper_color: Color = Color(1.0, 1.0, 1.0, 1.0)
+## Imagem do goleiro em campo. Vazio = procura KeeperRoster.ART_DIR/<keeper_id>.png; sem
+## arquivo, desenha o círculo placeholder.
+@export var art_texture: Texture2D:
+	set(value):
+		art_texture = value
+		queue_redraw()
+## Altura da imagem em campo (px); a largura acompanha a proporção
+@export var art_height: float = 64.0
+## O desenho original olha para a direita? (o goleiro vira para encarar o campo)
+@export var art_faces_right: bool = true
 
 var state: State = State.IDLE:
 	set(value):
@@ -60,6 +94,15 @@ var field: Field
 var ball: Ball
 var manager: MatchManager
 
+## Alcance mostrado enquanto o jogador escolhe para quem o goleiro lança (o MatchManager preenche)
+var range_preview: float = 0.0:
+	set(value):
+		range_preview = value
+		queue_redraw()
+## true enquanto espera o jogador escolher o alvo do lançamento (o MatchManager não conta o
+## tempo limite dos goleiros nesse intervalo)
+var _waiting_for_player: bool = false
+
 var _turns_left: int = 0
 var _interaction_mark: int = 0
 var _catch_forced: bool = false
@@ -71,6 +114,8 @@ var _jump_tween: Tween
 
 func _ready() -> void:
 	add_to_group("goalkeepers")
+	if art_texture == null:
+		art_texture = KeeperRoster.art_for(keeper_id)
 	_late_setup.call_deferred()  # espera Field, Ball e MatchManager existirem
 
 
@@ -99,12 +144,19 @@ func is_busy() -> bool:
 	return state == State.DIVING or state == State.THROWING
 
 
+## Está esperando o jogador escolher algo (o alvo do lançamento)? O MatchManager não conta o
+## tempo limite dos goleiros enquanto isso.
+func is_waiting_for_player() -> bool:
+	return _waiting_for_player
+
+
 ## Volta ao estado de começo de partida (usado quando o jogo recomeça depois do fim de jogo)
 func restart() -> void:
 	if field == null or ball == null:
 		return
 	set_physics_process(true)   # o fim de jogo desliga o goleiro
 	_cancel_all()
+	reset_for_new_match()
 	_turns_left = 0
 	_catch_forced = false
 	_interaction_mark = ball.interaction_count
@@ -225,6 +277,27 @@ func _on_turn_started(started_team: int) -> void:
 
 # ---------- DISPUTA DO CHUTE ----------
 
+## GANCHO dos goleiros especiais: recebe a chance de o chute vencer o goleiro (0..1) e devolve
+## a chance final. O padrão não mexe em nada. Roda uma vez por chute, antes do sorteio.
+func modify_shot_chance(chance: float, _shot_ball: Ball) -> float:
+	return chance
+
+
+## GANCHO: o sorteio acabou. beaten = true se o chute venceu o goleiro; false = ele defendeu.
+func on_shot_resolved(_beaten: bool) -> void:
+	pass
+
+
+## GANCHO: texto extra no aviso do chute (ex: a reserva do Gagamaru). Vazio = nada.
+func contest_note() -> String:
+	return ""
+
+
+## GANCHO: zera o que for da partida anterior (o restart() chama). Quem tem estado sobrescreve.
+func reset_for_new_match() -> void:
+	pass
+
+
 ## Chute em direção ao gol que acabou de entrar na área: sorteia contra a chance do chute.
 ## Devolve true se a disputa aconteceu.
 func _try_shot_contest() -> bool:
@@ -233,10 +306,12 @@ func _try_shot_contest() -> bool:
 	if not _ball_in_area() or not _shot_on_target():
 		return false
 
-	var chance: float = ball.pending_shot_chance
+	var base_chance: float = ball.pending_shot_chance
 	ball.pending_shot_chance = Ball.NO_SHOT  # cada chute só é disputado uma vez
+	var chance: float = clampf(modify_shot_chance(base_chance, ball), 0.0, 1.0)
 	var beaten: bool = randf() < chance
-	_announce_contest(chance, beaten)
+	on_shot_resolved(beaten)
+	_announce_contest(base_chance, chance, beaten)
 
 	if beaten:
 		_dive_and_miss()
@@ -305,7 +380,7 @@ func _catch_ball() -> void:
 	state = State.HOLDING
 	_play_jump()
 	if not _catch_forced:
-		_say("Goleiro do %s saltou na bola!" % _team_name(team))
+		_say("%s saltou na bola!" % _keeper_label())
 
 
 func _ball_passed_line() -> bool:
@@ -315,16 +390,35 @@ func _ball_passed_line() -> bool:
 
 # ---------- LANÇAMENTO ----------
 
+## O jogador escolhe para quem o goleiro lança? (o padrão sorteia um aliado). Quem sobrescrever
+## devolve true aqui e implementa _ask_throw_target().
+func lets_player_pick_throw() -> bool:
+	return false
+
+
+## Pergunta ao jogador para quem lançar (só roda se lets_player_pick_throw()). null = cancelou,
+## e aí o goleiro sorteia. O corpo do padrão só existe para a função ser uma corrotina.
+func _ask_throw_target() -> Player:
+	await get_tree().process_frame
+	return null
+
+
 func _throw_ball() -> void:
 	state = State.THROWING  # antes de qualquer await: o MatchManager já vê o goleiro ocupado
 	var token: int = _token
 
-	var target: Player = _pick_throw_target()
+	var target: Player = null
+	if lets_player_pick_throw():
+		target = await _ask_throw_target()
+		if not _throw_alive(token):
+			return   # a partida acabou ou recomeçou enquanto o jogador escolhia
+	if target == null:
+		target = _pick_throw_target()
 	if target == null:
 		ball.release_hover()
 		state = State.IDLE
 		return
-	_say("Goleiro do %s lança a bola!" % _team_name(team))
+	_say("%s lança a bola!" % _keeper_label())
 
 	var start: Vector2 = ball.global_position
 	var duration: float = clampf(start.distance_to(_landing_point(target, start)) / throw_speed, 0.4, 2.0)
@@ -392,7 +486,7 @@ func _pick_throw_target() -> Player:
 		if global_position.distance_to(p.global_position) > throw_range:
 			continue
 		in_range.append(p)
-		if not field.is_in_penalty_area(p.global_position, team):
+		if not _in_defense_area(p.global_position):
 			outside_area.append(p)
 
 	if not outside_area.is_empty():
@@ -465,8 +559,21 @@ func _home_position() -> Vector2:
 	return field.to_global(_home_local())
 
 
+## Grande área do time, aumentada pelo que o goleiro tiver de extra (Renoir). O lado da
+## linha de fundo não cresce. Sem extras, é exatamente a grande área do Field.
+func _defense_rect() -> Rect2:
+	var rect: Rect2 = field.get_penalty_area_rect(team)
+	if team == 0:
+		return rect.grow_individual(0.0, area_extra_side, area_extra_depth, area_extra_side)
+	return rect.grow_individual(area_extra_depth, area_extra_side, 0.0, area_extra_side)
+
+
+func _in_defense_area(global_pos: Vector2) -> bool:
+	return _defense_rect().has_point(field.to_local(global_pos))
+
+
 func _ball_in_area() -> bool:
-	return field.is_in_penalty_area(ball.global_position, team)
+	return _in_defense_area(ball.global_position)
 
 
 func _play_jump() -> void:
@@ -488,24 +595,77 @@ func _say(text: String, for_team: int = -1) -> void:
 		manager.announce_keeper(text, team if for_team < 0 else for_team)
 
 
-func _announce_contest(chance: float, beaten: bool) -> void:
+## "Goleiro do Azul" no padrão; "Renoir (Azul)" nos especiais
+func _keeper_label() -> String:
+	if display_name == "":
+		return "Goleiro do %s" % _team_name(team)
+	return "%s (%s)" % [display_name, _team_name(team)]
+
+
+## Se a passiva do goleiro mudou a chance, o aviso mostra os dois valores (ex: 45% para 37%)
+func _announce_contest(base_chance: float, chance: float, beaten: bool) -> void:
 	var pct: int = int(round(chance * 100.0))
+	var chance_text: String = "%d%%" % pct
+	if absf(base_chance - chance) > 0.0001:
+		chance_text = "%d%% para %d%%" % [int(round(base_chance * 100.0)), pct]
+	var note: String = contest_note()
+	if note != "":
+		note = " - " + note
 	if beaten:
 		var shooter: int = ball.shot_team if ball.shot_team >= 0 else team
-		_say("O chute passou pelo goleiro! (%d%% de chance)" % pct, shooter)
+		_say("O chute passou pelo goleiro! (%s de chance)%s" % [chance_text, note], shooter)
 	else:
-		_say("DEFENDEU! Goleiro do %s pegou o chute (%d%% de chance)" % [_team_name(team), pct])
+		_say("DEFENDEU! %s pegou o chute (%s de chance)%s" % [_keeper_label(), chance_text, note])
 
 
-# ---------- VISUAL (placeholder: troque por sprite quando quiser) ----------
+# ---------- VISUAL (imagem do goleiro; sem imagem, um círculo placeholder) ----------
+
+## Altura do "topo da cabeça" acima do chão (para barras e avisos em cima do goleiro)
+func _visual_top() -> float:
+	return art_height if art_texture != null else body_radius
+
 
 func _draw() -> void:
+	var team_color: Color = TeamStyle.color_of(team)
+	if art_texture != null:
+		_draw_art(team_color)
+	else:
+		_draw_placeholder(team_color)
+	# Alcance do lançamento enquanto o jogador escolhe o alvo (Fukaku)
+	if range_preview > 0.0:
+		draw_arc(Vector2.ZERO, range_preview, 0.0, TAU, 96, Color(1, 1, 1, 0.4), 2.0)
+
+
+func _draw_placeholder(team_color: Color) -> void:
 	draw_circle(Vector2.ZERO, body_radius, Color(0, 0, 0, 0.3))  # sombra no chão
 	var center := Vector2(0, -height)
 	draw_circle(center, body_radius, keeper_color)
-	draw_arc(center, body_radius, 0.0, TAU, 32, TeamStyle.color_of(team), 4.0)
+	draw_arc(center, body_radius, 0.0, TAU, 32, team_color, 4.0)
 	match state:
 		State.PREPARING:
 			draw_arc(center, body_radius + 6.0, 0.0, TAU, 32, Color(1, 1, 1, 0.9), 2.0)
 		State.HOLDING:
 			draw_arc(center, body_radius + 6.0, 0.0, TAU, 32, Color(0.4, 0.9, 1.0, 0.9), 2.0)
+
+
+func _draw_art(team_color: Color) -> void:
+	# No chão (achatados, como no Player): sombra, anel do time e anéis de estado
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2(1.0, 0.45))
+	draw_circle(Vector2.ZERO, body_radius, Color(0, 0, 0, 0.3))
+	draw_arc(Vector2.ZERO, body_radius + 2.0, 0.0, TAU, 32, Color(team_color, 0.9), 3.0)
+	match state:
+		State.PREPARING:
+			draw_arc(Vector2.ZERO, body_radius + 8.0, 0.0, TAU, 32, Color(1, 1, 1, 0.9), 2.0)
+		State.HOLDING:
+			draw_arc(Vector2.ZERO, body_radius + 8.0, 0.0, TAU, 32, Color(0.4, 0.9, 1.0, 0.9), 2.0)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)
+
+	# A imagem: pés no chão, sobe junto com o salto, virada para o campo
+	var tex_size: Vector2 = art_texture.get_size()
+	var h: float = art_height
+	var w: float = h * tex_size.x / maxf(tex_size.y, 1.0)
+	var flip: bool = (team == 0) != art_faces_right   # o time 0 olha para a direita
+	if flip:
+		draw_set_transform(Vector2.ZERO, 0.0, Vector2(-1.0, 1.0))
+	draw_texture_rect(art_texture, Rect2(-w * 0.5, -height - h, w, h), false)
+	draw_set_transform(Vector2.ZERO, 0.0, Vector2.ONE)

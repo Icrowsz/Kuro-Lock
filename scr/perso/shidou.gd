@@ -73,6 +73,11 @@ enum ShotVariant { NONE, KABLAMO, DRAGON, BIG_BANG }
 ## Aura do Big Bang Drive (maior e mais intensa). Vazio = usa o estilo padrão (veja _make_big_bang_fx)
 @export var big_bang_fx: KickFX
 
+@export_group("Descrição (hover)")
+## Imagem de cada habilidade no balão do menu. Chaves: kablamo, demonic_rush, obsessive_lover, obsessive_hater.
+## Sem imagem, o balão aparece só com o texto.
+@export var skill_icons: Dictionary = {}
+
 
 var _base_move_speed: float = 0.0
 
@@ -598,6 +603,47 @@ func use_skill(skill_id: StringName = &"default") -> bool:
 		SKILL_HATER:
 			return await _use_obsessive(true)
 	return false
+
+
+# ---------- DESCRIÇÃO (balão do menu, ver action_menu.gd) ----------
+
+func _pct(value: float) -> int:
+	return int(round(value * 100.0))
+
+
+func get_skill_info(skill_id: StringName) -> Dictionary:
+	var title: String = ""
+	var text: String = ""
+	match skill_id:
+		SKILL_SHOT:
+			title = _shot_skill_name()
+			text = ("Chute de habilidade. A variante muda sozinha com a altura dele e da bola:\n"
+				+ "• Kablamo (os dois no chão): chute forte com curva bem pequena; a bola atravessa o próprio Shidou. %d%% de chance de gol.\n"
+				+ "• Dragon Drive (os dois suspensos): voleio com QTE fácil; a bola sobe até voando no caminho e cai até o chão. %d%%.\n"
+				+ "• Big Bang Drive (ele suspenso e bola voando): voleio voador mais forte, com QTE difícil. %d%%.\n"
+				+ "Recarga: %d rodadas, compartilhada entre as três.") % [
+				_pct(chance_kablamo), _pct(chance_dragon), _pct(chance_big_bang), shot_cooldown]
+		SKILL_RUSH:
+			title = "Draconic Header" if _header_available() else "Demonic Rush"
+			text = ("Demonic Rush: um Correr com o mesmo tempo, mas %.1fx mais veloz. Só no chão e não conta no limite de Correr. Se ao fim da corrida ele alcançou uma bola suspensa, o botão vira Draconic Header.\n"
+				+ "Draconic Header (complemento, vale na mesma rodada): chute reto; a bola sobe até voando e desce até o chão. %d%% de chance de gol. NÃO gasta ação de habilidade.\n"
+				+ "Recarga: %d rodadas, compartilhada.") % [
+				rush_speed_mult, _pct(chance_header), rush_cooldown]
+		SKILL_LOVER:
+			title = "Obsessive Lover"
+			text = ("Escolhe um aliado a até %d px. Por %d rodadas ele ganha +%d ação(ões) de habilidade a cada turno do time, e os chutes do Shidou (Chutar e habilidades) ganham +%d%% quando vêm de um passe dele. Acaba se o aliado ficar a mais de %d px do Shidou.\n"
+				+ "Recarga: %d rodadas, compartilhada com o Obsessive Hater.") % [
+				int(lover_pick_range), obsessive_rounds, lover_extra_skill_actions, _pct(lover_pass_bonus),
+				int(lover_break_distance), obsessive_cooldown]
+		SKILL_HATER:
+			title = "Obsessive Hater"
+			text = ("Escolhe um inimigo a até %d px. Por %d rodadas ele perde UMA ação geral sorteada (Correr, Pular, Carrinho, Chutar ou Passar). Acaba se o inimigo ficar a mais de %d px do Shidou.\n"
+				+ "Recarga: %d rodadas, compartilhada com o Obsessive Lover.") % [
+				int(hater_pick_range), obsessive_rounds, int(hater_break_distance), obsessive_cooldown]
+		_:
+			return {}
+	var icon: Texture2D = skill_icons.get(String(skill_id), skill_icons.get(skill_id)) as Texture2D
+	return {"title": title, "description": text, "icon": icon}
 
 
 # ---------- PARTIDA NOVA ----------

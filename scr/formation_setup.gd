@@ -15,6 +15,7 @@ var manager: MatchManager
 var _field: Field
 var _team: int = -1
 var _confirmed: Array[bool] = []
+var _keeper_retried: bool = false  # o Field cria os goleiros no próximo frame: tenta de novo uma vez
 var _snapshot: Dictionary = {}     # Player -> posição quando começou a editar (botão "Restaurar")
 var _targets: Dictionary = {}      # Player -> destino de uma formação pronta que ainda está deslizando
 var _dragging: Player = null
@@ -277,6 +278,29 @@ func _rebuild_characters() -> void:
 		col.add_child(pick)
 		_character_box.add_child(col)
 
+	# Seletor do goleiro do time (ele não é um Player: a troca é pelo KeeperRoster)
+	var keeper: Goalkeeper = _keeper_of(_team)
+	if keeper == null:
+		if not _keeper_retried:
+			_keeper_retried = true
+			_rebuild_characters.call_deferred()
+		return
+	var keeper_col := VBoxContainer.new()
+	keeper_col.add_child(UiStyle.make_label("Goleiro", 14, UiStyle.MUTED_COLOR))
+	var keeper_pick := OptionButton.new()
+	UiStyle.style_button(keeper_pick)
+	var keeper_selected: int = 0
+	var keepers: Array[Dictionary] = KeeperRoster.KEEPERS
+	for i in keepers.size():
+		keeper_pick.add_item(keepers[i]["name"], i)
+		keeper_pick.set_item_metadata(i, keepers[i]["id"])
+		if keepers[i]["id"] == keeper.keeper_id:
+			keeper_selected = i
+	keeper_pick.select(keeper_selected)
+	keeper_pick.item_selected.connect(_on_keeper_selected.bind(keeper, keeper_pick))
+	keeper_col.add_child(keeper_pick)
+	_character_box.add_child(keeper_col)
+
 
 ## Troca o personagem de um jogador (o nó antigo é substituído por um novo, no mesmo lugar)
 func _on_character_selected(index: int, old: Player, pick: OptionButton) -> void:
@@ -304,6 +328,23 @@ func _on_character_selected(index: int, old: Player, pick: OptionButton) -> void
 	_overlay.dragging = null
 	_overlay.queue_redraw()
 	_rebuild_characters.call_deferred()
+
+
+## O goleiro do time (null se o Field ainda não criou)
+func _keeper_of(team: int) -> Goalkeeper:
+	for k: Goalkeeper in get_tree().get_nodes_in_group("goalkeepers"):
+		if k.team == team:
+			return k
+	return null
+
+
+## Troca o estilo do goleiro (o nó antigo é substituído por um novo, no mesmo lugar)
+func _on_keeper_selected(index: int, old: Goalkeeper, pick: OptionButton) -> void:
+	var id: String = pick.get_item_metadata(index)
+	if id == old.keeper_id:
+		return
+	KeeperRoster.replace_keeper(old, id)
+	_rebuild_characters.call_deferred()   # o seletor passa a apontar para o goleiro novo
 
 
 # ---------- FLUXO ENTRE OS TIMES ----------

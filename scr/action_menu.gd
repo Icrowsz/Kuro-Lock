@@ -20,6 +20,30 @@ var _last_team: int = -1
 var _last_team_color: Color = Color.TRANSPARENT
 var _color_tween: Tween
 
+## Pasta com as imagens das ações gerais (run.png, jump.png, slide.png, shoot.png, pass.png,
+## stand_up.png). Imagem que não existir é só pulada: o balão aparece sem figura.
+@export var general_icon_dir: String = "res://img/actions/"
+
+const GENERAL_ICON_FILES := {
+	MatchManager.GeneralAction.RUN: "run",
+	MatchManager.GeneralAction.JUMP: "jump",
+	MatchManager.GeneralAction.SLIDE: "slide",
+	MatchManager.GeneralAction.SHOOT: "shoot",
+	MatchManager.GeneralAction.PASS: "pass",
+	MatchManager.GeneralAction.STAND_UP: "stand_up",
+}
+
+# Balão de descrição (aparece quando o mouse passa por cima de um botão de ação)
+var _tip_panel: PanelContainer
+var _tip_icon: TextureRect
+var _tip_title: Label
+var _tip_desc: Label
+var _hover_button: Button = null
+var _hover_kind: StringName = &""    # &"general" ou &"skill"
+var _hover_key: Variant = null       # GeneralAction ou id da habilidade
+var _tip_hash: int = 0
+var _icon_cache: Dictionary = {}
+
 
 func _ready() -> void:
 	_build_ui()
@@ -69,6 +93,7 @@ func _build_ui() -> void:
 		UiStyle.style_button(b)
 		hbox.add_child(b)
 		general_buttons[action] = b
+		_hook_hover(b, &"general", action)
 
 	skill_box = HBoxContainer.new()  # os botões dourados (ações especiais) são criados em _update_skill_buttons
 	skill_box.add_theme_constant_override("separation", 8)
@@ -100,6 +125,8 @@ func _build_ui() -> void:
 	cancel_button.pressed.connect(manager.cancel_pass)
 	UiStyle.style_button(cancel_button, Color(0.75, 0.30, 0.30))
 	pass_box.add_child(cancel_button)
+
+	_build_tooltip()
 
 
 func _refresh() -> void:
@@ -218,6 +245,7 @@ func _update_skill_buttons() -> void:
 	for s in skills:
 		ids.append(s["id"])
 	if ids != _skill_ids:
+		_hide_tip()   # os botões vão ser recriados
 		for b in _skill_buttons:
 			b.queue_free()
 		_skill_buttons.clear()
@@ -228,6 +256,7 @@ func _update_skill_buttons() -> void:
 			UiStyle.style_button(b, UiStyle.ACCENT_COLOR.darkened(0.25))  # dourado: ação especial
 			skill_box.add_child(b)
 			_skill_buttons.append(b)
+			_hook_hover(b, &"skill", id)
 
 	for i in skills.size():
 		if confused:
@@ -258,3 +287,145 @@ func _process(_delta: float) -> void:
 	var p: Player = manager.active_player
 	if manager.phase == MatchManager.Phase.EXECUTING and p and p.state == Player.State.RUNNING:
 		info_label.text = "%s correndo (WASD)... %.1fs" % [p.get_display_name(), p.run_time_left]
+
+	_update_tip()
+
+
+# ---------- BALÃO DE DESCRIÇÃO (hover) ----------
+
+func _build_tooltip() -> void:
+	_tip_panel = PanelContainer.new()
+	_tip_panel.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	_tip_panel.visible = false
+	UiStyle.style_panel(_tip_panel)
+	add_child(_tip_panel)   # por último: fica por cima do resto da interface
+
+	var row := HBoxContainer.new()
+	row.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_theme_constant_override("separation", 12)
+	_tip_panel.add_child(row)
+
+	_tip_icon = TextureRect.new()
+	_tip_icon.custom_minimum_size = Vector2(72, 72)
+	_tip_icon.expand_mode = TextureRect.EXPAND_IGNORE_SIZE
+	_tip_icon.stretch_mode = TextureRect.STRETCH_KEEP_ASPECT_CENTERED
+	_tip_icon.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	row.add_child(_tip_icon)
+
+	var col := VBoxContainer.new()
+	col.mouse_filter = Control.MOUSE_FILTER_IGNORE
+	col.add_theme_constant_override("separation", 4)
+	row.add_child(col)
+
+	_tip_title = UiStyle.make_label("", 18)
+	_tip_title.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	col.add_child(_tip_title)
+
+	_tip_desc = UiStyle.make_label("", 14)
+	_tip_desc.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
+	_tip_desc.autowrap_mode = TextServer.AUTOWRAP_WORD_SMART
+	_tip_desc.custom_minimum_size = Vector2(300, 0)
+	col.add_child(_tip_desc)
+
+
+func _hook_hover(b: Button, kind: StringName, key: Variant) -> void:
+	b.mouse_entered.connect(_show_tip.bind(b, kind, key))
+	b.mouse_exited.connect(_hide_tip)
+	b.pressed.connect(_hide_tip)
+
+
+func _show_tip(b: Button, kind: StringName, key: Variant) -> void:
+	_hover_button = b
+	_hover_kind = kind
+	_hover_key = key
+	_tip_hash = 0
+	_update_tip()
+
+
+func _hide_tip() -> void:
+	_hover_button = null
+	if _tip_panel:
+		_tip_panel.visible = false
+
+
+## Mantém o balão atualizado enquanto o mouse está no botão (a variante de uma habilidade
+## pode mudar com a situação) e posicionado acima dele.
+func _update_tip() -> void:
+	if _tip_panel == null or _hover_button == null:
+		return
+	if not is_instance_valid(_hover_button) or not _hover_button.is_visible_in_tree():
+		_hide_tip()
+		return
+	var data: Dictionary = _tip_data()
+	if data.is_empty() or String(data.get("description", "")) == "":
+		_tip_panel.visible = false
+		return
+
+	var h: int = hash(data)
+	if h != _tip_hash:
+		_tip_hash = h
+		_tip_title.text = String(data.get("title", ""))
+		_tip_desc.text = String(data["description"])
+		var icon: Texture2D = data.get("icon") as Texture2D
+		_tip_icon.texture = icon
+		_tip_icon.visible = icon != null
+
+	_tip_panel.visible = true
+	_tip_panel.reset_size()
+	var r: Rect2 = _hover_button.get_global_rect()
+	var view_w: float = get_viewport().get_visible_rect().size.x
+	var x: float = clampf(r.position.x + r.size.x * 0.5 - _tip_panel.size.x * 0.5,
+		8.0, maxf(8.0, view_w - _tip_panel.size.x - 8.0))
+	_tip_panel.position = Vector2(x, r.position.y - _tip_panel.size.y - 10.0)
+
+
+## {"title", "description", "icon"} do botão em foco. Vazio = sem balão.
+func _tip_data() -> Dictionary:
+	var p: Player = manager.active_player
+	if _hover_kind == &"general":
+		return _general_tip(int(_hover_key), p)
+	# Habilidade: quem descreve é o próprio personagem (get_skill_info). Quem não tiver essa
+	# função fica sem balão. Confuso (Confundo): não entrega qual botão é qual.
+	if p == null or p.is_confused() or not p.has_method("get_skill_info"):
+		return {}
+	return p.get_skill_info(_hover_key)
+
+
+func _general_icon(action: int) -> Texture2D:
+	if _icon_cache.has(action):
+		return _icon_cache[action]
+	var tex: Texture2D = null
+	var path: String = "%s/%s.png" % [general_icon_dir, GENERAL_ICON_FILES.get(action, "")]
+	if ResourceLoader.exists(path):
+		tex = load(path) as Texture2D
+	_icon_cache[action] = tex
+	return tex
+
+
+## Descrição das ações gerais (usa os números de quem está agindo, quando há alguém)
+func _general_tip(action: int, p: Player) -> Dictionary:
+	var text: String = ""
+	match action:
+		MatchManager.GeneralAction.RUN:
+			var secs: float = (p.run_duration + p.run_time_bonus) if p else 1.5
+			var uses: int = p.max_runs_per_turn if p else 2
+			text = "Corre livremente com WASD por %.1f s. Só no chão, até %d vezes por turno." % [secs, uses]
+		MatchManager.GeneralAction.JUMP:
+			text = "Sobe ao nível Suspenso (só a partir do chão) e fica no ar até o turno do seu time voltar. Quem está suspenso passa por baixo de carrinhos e alcança a bola voando."
+		MatchManager.GeneralAction.SLIDE:
+			var dist: int = int(p.slide_distance) if p else 220
+			var uses_s: int = p.max_slides_per_turn if p else 1
+			text = "Mire e deslize até %d px. Derruba inimigos no chão e empurra a bola rasteira na direção do carrinho. Quem está suspenso desvia. Só no chão, %d vez por turno." % [dist, uses_s]
+		MatchManager.GeneralAction.SHOOT:
+			var reach: int = int(p.kick_range) if p else 70
+			text = "Chuta a bola se ela estiver a até %d px e num nível alcançável. Chute no chão não tem QTE; bola alta, voleio e bola voando têm. Errar o QTE enfraquece o chute e derruba." % reach
+		MatchManager.GeneralAction.PASS:
+			text = "Passa para um companheiro, com a bola ao alcance. Rasteiro: alcance %d px, e inimigo no chão no caminho intercepta. Alto: alcance %d px, a bola paira e chega no seu próximo turno." % [
+				int(manager.ground_pass_range), int(manager.high_pass_range)]
+		MatchManager.GeneralAction.STAND_UP:
+			text = "Levanta o jogador derrubado. Se ninguém levantar, ele se levanta sozinho depois de %d rodadas." % manager.auto_stand_up_rounds
+	return {
+		"title": MatchManager.GENERAL_ACTION_NAMES.get(action, ""),
+		"description": text,
+		"icon": _general_icon(action),
+	}

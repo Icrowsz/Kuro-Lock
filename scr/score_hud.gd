@@ -270,6 +270,8 @@ func _on_match_ended(winner: int) -> void:
 			none.horizontal_alignment = HORIZONTAL_ALIGNMENT_LEFT
 			col.add_child(none)
 
+	_add_mvp_section()
+
 	# Botão para voltar à montagem das formações e começar de novo
 	_summary_box.add_child(HSeparator.new())
 	var back := Button.new()
@@ -283,6 +285,38 @@ func _on_match_ended(winner: int) -> void:
 	_summary.modulate.a = 0.0
 	UiStyle.pop(_summary, 0.85, 0.35)
 	create_tween().tween_property(_summary, "modulate:a", 1.0, 0.25)
+
+
+## Bloco do MVP no resumo final: nome, imagem/animação embaixo e a conta dos pontos
+func _add_mvp_section() -> void:
+	var mvp: Dictionary = manager.mvp
+	if mvp.is_empty():
+		return
+	var color: Color = _team_color(mvp["team"])
+
+	_summary_box.add_child(HSeparator.new())
+	_summary_box.add_child(UiStyle.make_label("MVP", 18, UiStyle.MUTED_COLOR))
+	_summary_box.add_child(UiStyle.make_label(String(mvp["name"]), 32, color))
+
+	var portrait := MvpPortrait.new()
+	portrait.setup(mvp["image"] as Texture2D, color, String(mvp["name"]))
+	portrait.size_flags_horizontal = Control.SIZE_SHRINK_CENTER
+	_summary_box.add_child(portrait)
+
+	_summary_box.add_child(UiStyle.make_label(_mvp_breakdown(mvp), 16, UiStyle.MUTED_COLOR))
+
+
+## "5 pts — 2 gols · 1 assist. · vitória"
+func _mvp_breakdown(mvp: Dictionary) -> String:
+	var parts: PackedStringArray = []
+	if mvp["goals"] > 0:
+		var goal_word: String = "gol de ouro" if mvp["golden"] else ("gol" if mvp["goals"] == 1 else "gols")
+		parts.append("%d %s" % [mvp["goals"], goal_word])
+	if mvp["assists"] > 0:
+		parts.append("%d assist." % mvp["assists"])
+	if mvp["win"] > 0:
+		parts.append("vitória")
+	return "%d pts — %s" % [mvp["points"], " · ".join(parts)]
 
 
 # ---------- TEXTOS ----------

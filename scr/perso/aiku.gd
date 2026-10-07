@@ -69,6 +69,11 @@ const CD_WALL: StringName = &"cd_wall"
 ## Aura + partículas do Viper Tackle / Serpent Wall. Vazio = usa o estilo padrão (veja _make_kick_fx)
 @export var kick_fx: KickFX
 
+@export_group("Descrição (hover)")
+## Imagem de cada habilidade no balão do menu. Chaves: snake_lunge, viper_tackle, serpent_wall.
+## Sem imagem, o balão aparece só com o texto.
+@export var skill_icons: Dictionary = {}
+
 ## Inimigo atualmente travado pelo Snake Lunge/Bloom deste Aiku (null = nenhum)
 var _lunge_target: Player = null
 ## Pulso visual do bote (1 -> 0) e o ponto do inimigo atingido
@@ -407,6 +412,44 @@ func use_skill(skill_id: StringName = &"default") -> bool:
 		SKILL_WALL:
 			return await _use_serpent_wall()
 	return false
+
+
+# ---------- DESCRIÇÃO (balão do menu, ver action_menu.gd) ----------
+
+func _pct(value: float) -> int:
+	return int(round(value * 100.0))
+
+
+func get_skill_info(skill_id: StringName) -> Dictionary:
+	var title: String = ""
+	var text: String = ""
+	match skill_id:
+		SKILL_LUNGE:
+			var lunge_text: String = "Snake Lunge (Aiku no chão): escolhe um inimigo no chão a até %d px, dá o bote até ele e o TRAVA por %d rodadas (sem ações gerais nem habilidade), ou até o Aiku se afastar mais de %d px dele." % [
+				int(lunge_range), lunge_rounds, int(lunge_leash_range)]
+			var bloom_text: String = "Bloom (Aiku suspenso ou voando): faz o mesmo com um inimigo suspenso ou voando. Derruba o inimigo e trava só a HABILIDADE dele por %d rodada(s)." % bloom_rounds
+			if _lunge_bucket(height_level) == 1:
+				title = "Bloom"
+				text = bloom_text
+			else:
+				title = "Snake Lunge"
+				text = lunge_text
+			text += "\nRecarga: %d rodadas, contadas a partir do fim do efeito (compartilhada entre as duas)." % lunge_cooldown
+		SKILL_VIPER:
+			title = "Viper Tackle"
+			text = ("Um carrinho bem mais longo (%d px) que também pode ser feito suspenso. Derruba os inimigos no caminho que estiverem no mesmo nível dele.\n"
+				+ "Se encontrar a bola: no chão, ele dá um passe curto (alcance %d px, sem gastar a ação de Passe); suspensa, faz um QTE fácil e, acertando, mira um chute fraco (%d%% de chance de gol).\n"
+				+ "Recarga: %d rodadas.") % [
+				int(viper_distance), int(viper_ball_pass_range), _pct(viper_weak_kick_chance), viper_cooldown]
+		SKILL_WALL:
+			title = "Serpent Wall"
+			text = ("Com a bola a até %d px e suspensa ou voando, Aiku salta até ela e faz um QTE difícil. Acertando, mira um chute fraco (%d%% de chance de gol); errando, ele cai.\n"
+				+ "Recarga: %d rodadas.") % [
+				int(wall_range), _pct(wall_weak_kick_chance), wall_cooldown]
+		_:
+			return {}
+	var icon: Texture2D = skill_icons.get(String(skill_id), skill_icons.get(skill_id)) as Texture2D
+	return {"title": title, "description": text, "icon": icon}
 
 
 # ---------- PARTIDA NOVA ----------
