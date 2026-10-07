@@ -49,13 +49,13 @@ const YELLOW := Color(1.0, 0.92, 0.1)
 @export var dog_cooldown: int = 2
 
 @export_group("Radius")
-@export var radius_range: float = 260.0           # raio do esquadro
-@export var radius_cast_range: float = 350.0      # o inimigo mais próximo precisa estar a até isso
+@export var radius_range: float = 150.0           # raio do esquadro
+@export var radius_cast_range: float = 250.0      # o inimigo mais próximo precisa estar a até isso
 @export var radius_rounds: int = 3
 @export var radius_cooldown: int = 3
 @export var radius_slow: float = 0.9              # segundos tirados do Correr do inimigo dentro da área
 @export var radius_slow_sexy: float = 1.2         # idem com Sexy Mode
-@export var radius_area_mult_sexy: float = 1.35   # área maior com Sexy Mode
+@export var radius_area_mult_sexy: float = 1.3   # área maior com Sexy Mode
 
 @export_group("Sexy Mode")
 @export var sexy_rounds: int = 3

@@ -12,18 +12,19 @@ stalk_penalty_sexy = 0.1
 stalk_rounds = 2
 stalker_cooldown = 3
 dog_cooldown = 2
-radius_range = 260.0
+radius_range = 150.0
 radius_cast_range = 350.0
 radius_rounds = 3
 radius_cooldown = 3
 radius_slow = 0.9
 radius_slow_sexy = 1.2
-radius_area_mult_sexy = 1.35
+radius_area_mult_sexy = 1.2
 sexy_rounds = 3
 sexy_cooldown = 3
 sexy_run_bonus = 0.7
 sexy_slide_mult = 1.3
 kick_fx = null
+skill_icons = {}
 
 [node name="SprPlayer" parent="." index="1" unique_id=395354675]
 scale = Vector2(0.2, 0.2)

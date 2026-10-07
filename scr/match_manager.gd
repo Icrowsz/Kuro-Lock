@@ -89,8 +89,8 @@ const PASS_VARIANT_NAMES := {
 @export var keeper_wait_timeout: float = 8.0   # trava de segurança: máximo que o jogo espera os goleiros
 
 @export_group("Tempo de jogo")
-@export var rounds_per_half: int = 25         # rodadas de cada tempo (1º + 2º = tempo normal)
-@export var extra_time_rounds: int = 15       # rodadas da prorrogação (gol de ouro), se empatar
+@export var rounds_per_half: int = 20         # rodadas de cada tempo (1º + 2º = tempo normal)
+@export var extra_time_rounds: int = 10       # rodadas da prorrogação (gol de ouro), se empatar
 
 @export_group("Formações")
 @export var use_formation_setup: bool = true          # antes da partida, cada time monta e confirma a formação
@@ -1038,6 +1038,7 @@ var _skill_pick_cancelled: bool = false
 ## que aconteça durante o await (troca de active_player, gol, etc.).
 func do_skill_action(skill_id: StringName = &"default") -> void:
 	if not can_use_skill(skill_id):
+		_waste_confused_skill(skill_id)
 		return
 
 	var actor: Player = active_player
@@ -1062,6 +1063,23 @@ func do_skill_action(skill_id: StringName = &"default") -> void:
 		return
 
 	_after_action()
+
+
+## CONFUNDO: com os botões embaralhados ("???"), escolher uma habilidade que NÃO dá para usar
+## (em recarga, sem alvo no alcance...) gasta a ação de habilidade mesmo assim e não devolve.
+## Sem isso dava para clicar em todas até achar uma que funcione. Só vale para quem está
+## confuso, e só se ainda sobrar ação de habilidade para gastar.
+func _waste_confused_skill(skill_id: StringName) -> void:
+	if not can_act() or active_player == null or not active_player.is_confused():
+		return
+	if skill_left_for(active_player) <= 0 or active_player.skill_is_free(skill_id):
+		return   # nada para gastar
+	var who: String = active_player.get_display_name()   # o _after_action pode trocar/limpar o active_player
+	_pay_skill_cost(active_player, skill_id)   # sem recibo: nunca devolve
+	_after_action()
+	if phase == Phase.CHOOSING_ACTION:   # se o turno acabou, o aviso não faz sentido
+		pass_hint = "%s está confuso: a habilidade escolhida não pôde ser usada e a ação foi gasta!" % who
+		state_changed.emit()
 
 
 ## Gasta a ação de habilidade de quem vai usar a habilidade e devolve um "recibo" para

@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://5q04nfk8km4n" path="res://scr/perso/rin.gd" id="2_1uojg"]
 [ext_resource type="Texture2D" uid="uid://dyeyq7om3cv7x" path="res://img/rinicon.png" id="2_urxsj"]
 [ext_resource type="Script" uid="uid://ilb76etk0iey" path="res://scr/kick_fx.gd" id="3_lwpik"]
+[ext_resource type="Texture2D" uid="uid://ckqr7atg4np8o" path="res://img/mvps/rin.jpg" id="4_f5bs0"]
 
 [sub_resource type="Resource" id="Resource_hkwn6"]
 script = ExtResource("3_lwpik")
@@ -40,7 +41,9 @@ destroyer_cooldown = 3
 typing_time = 2.0
 typing_words = Array[String](["CURVA", "DESTRUIR", "INVERTER", "OPOSTO", "CAOS"])
 kick_fx = SubResource("Resource_hkwn6")
+skill_icons = {}
 display_name = "Itoshi Rin"
+mvp_image = ExtResource("4_f5bs0")
 visual_root = NodePath("SprPlayer")
 
 [node name="SprPlayer" parent="." index="1" unique_id=395354675]
