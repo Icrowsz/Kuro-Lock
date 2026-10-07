@@ -2,6 +2,7 @@
 
 [ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_yau7e"]
 [ext_resource type="Script" uid="uid://bitleu8jom2og" path="res://scr/perso/chigiri.gd" id="2_v3jbk"]
+[ext_resource type="Texture2D" uid="uid://k1tsiu1rjls0" path="res://img/mvps/chigiri.jpg" id="3_ewghm"]
 [ext_resource type="Texture2D" uid="uid://p8cxc7eliof7" path="res://img/chigiriicon.png" id="3_rknuj"]
 
 [node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_yau7e")]
@@ -25,7 +26,9 @@ red_princess_rise_time = 0.5
 red_princess_fall_time = 0.55
 miau_cooldown = 3
 kick_fx = null
+skill_icons = {}
 display_name = "Hyoma Chigiri"
+mvp_image = ExtResource("3_ewghm")
 visual_root = NodePath("SprPlayer")
 
 [node name="SprPlayer" parent="." index="1" unique_id=395354675]

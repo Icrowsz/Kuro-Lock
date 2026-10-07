@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_oj453"]
 [ext_resource type="Texture2D" uid="uid://b8b6d85wtiw73" path="res://img/shidouicon.png" id="2_1ifi4"]
 [ext_resource type="Script" uid="uid://bsq3cw35871qs" path="res://scr/perso/shidou.gd" id="2_65f7p"]
+[ext_resource type="Texture2D" uid="uid://bc7e617k24xwc" path="res://img/mvps/shidou.jpg" id="3_hu5on"]
 
 [node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_oj453")]
 script = ExtResource("2_65f7p")
@@ -29,7 +30,9 @@ hater_pick_range = 500.0
 hater_break_distance = 800.0
 kick_fx = null
 big_bang_fx = null
+skill_icons = {}
 display_name = "Shidou Ryusei"
+mvp_image = ExtResource("3_hu5on")
 visual_root = NodePath("SprPlayer")
 
 [node name="SprPlayer" parent="." index="1" unique_id=395354675]

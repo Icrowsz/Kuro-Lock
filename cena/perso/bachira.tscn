@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_ygkwl"]
 [ext_resource type="Texture2D" uid="uid://bc6g2wh646cjx" path="res://img/bachiraicon.png" id="2_3lb65"]
 [ext_resource type="Script" uid="uid://c5dwkomypbgg5" path="res://scr/perso/bachira.gd" id="2_6eyd0"]
+[ext_resource type="Texture2D" uid="uid://6hhnhjobeij1" path="res://img/mvps/bachira.jpg" id="3_dcfof"]
 
 [node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_ygkwl")]
 script = ExtResource("2_6eyd0")
@@ -21,7 +22,9 @@ instinct_extra_generals = 1
 instinct_sticks_ball = true
 instinct_stick_extra_rounds = 0
 kick_fx = null
+skill_icons = {}
 display_name = "Meguru Bachira"
+mvp_image = ExtResource("3_dcfof")
 visual_root = NodePath("SprPlayer")
 
 [node name="SprPlayer" parent="." index="1" unique_id=395354675]

@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_vy58h"]
 [ext_resource type="Script" uid="uid://x7dey66gb5hl" path="res://scr/perso/zantetsu.gd" id="2_e0om6"]
 [ext_resource type="Texture2D" uid="uid://bxnfntil3u51d" path="res://img/zantetsuicon.png" id="2_xrcm0"]
+[ext_resource type="Texture2D" uid="uid://dj5mqn0i4ufa4" path="res://img/mvps/zantetsu.jpg" id="3_e0om6"]
 
 [node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_vy58h")]
 script = ExtResource("2_e0om6")
@@ -13,6 +14,7 @@ a_train_duration = 0.25
 train_cooldown = 2
 stop_on_enemy_contact = true
 contact_margin = 8.0
+dash_ball_push_speed = 600.0
 rails_length_ratio = 0.6
 rails_thickness = 125.0
 rails_rounds = 2
@@ -31,7 +33,9 @@ volley_dash_duration = 0.3
 volley_catch_radius = 60.0
 idiot_volley_qte = false
 kick_fx = null
+skill_icons = {}
 display_name = "Zantetsu Tsurugi"
+mvp_image = ExtResource("3_e0om6")
 visual_root = NodePath("SprPlayer")
 
 [node name="SprPlayer" parent="." index="1" unique_id=395354675]

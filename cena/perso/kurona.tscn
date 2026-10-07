@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_eajul"]
 [ext_resource type="Script" uid="uid://btaemgnf2l0e3" path="res://scr/perso/kurona.gd" id="2_ksyc4"]
 [ext_resource type="Texture2D" uid="uid://dhwlkatiahw5" path="res://img/kuronaicon.png" id="3_hhmrk"]
+[ext_resource type="Texture2D" uid="uid://ce1w8tpl34xgs" path="res://img/mvps/kurona.jpg" id="3_wsdcl"]
 
 [node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_eajul")]
 script = ExtResource("2_ksyc4")
@@ -23,7 +24,9 @@ bite_pass_range = 300.0
 assault_reach = 260.0
 assault_dash_time = 0.25
 assault_cooldown = 2
+skill_icons = {}
 display_name = "Ranze Kurona"
+mvp_image = ExtResource("3_wsdcl")
 visual_root = NodePath("SprPlayer")
 
 [node name="SprPlayer" parent="." index="1" unique_id=395354675]

@@ -4,6 +4,7 @@
 [ext_resource type="Script" uid="uid://ccbmmd7f2lk2f" path="res://scr/perso/ness.gd" id="2_0etue"]
 [ext_resource type="Texture2D" uid="uid://b6prhr7vuhq45" path="res://img/nessicon.png" id="2_1g8gl"]
 [ext_resource type="Script" uid="uid://ilb76etk0iey" path="res://scr/kick_fx.gd" id="3_tw8x0"]
+[ext_resource type="Texture2D" uid="uid://bu41lvr68n8ph" path="res://img/mvps/ness.jpg" id="4_i3n46"]
 
 [sub_resource type="Resource" id="Resource_0etue"]
 script = ExtResource("3_tw8x0")
@@ -41,7 +42,9 @@ spell_time = 0.35
 arresto_rounds = 3
 arresto_drop_time = 0.35
 kick_fx = SubResource("Resource_0etue")
+skill_icons = {}
 display_name = "Alexis Ness"
+mvp_image = ExtResource("4_i3n46")
 visual_root = NodePath("SprPlayer")
 
 [node name="SprPlayer" parent="." index="1" unique_id=395354675]

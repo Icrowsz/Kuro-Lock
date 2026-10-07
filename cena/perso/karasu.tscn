@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_4ikdh"]
 [ext_resource type="Texture2D" uid="uid://sv58ke6ve6h8" path="res://img/karasuicon.png" id="2_6d4ex"]
 [ext_resource type="Script" uid="uid://b7xsjunegam3s" path="res://scr/perso/karasu.gd" id="2_hpwbx"]
+[ext_resource type="Texture2D" uid="uid://c5lquxbhi48b3" path="res://img/mvps/karasu.jpg" id="3_2w6vw"]
 
 [node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_4ikdh")]
 script = ExtResource("2_hpwbx")
@@ -28,7 +29,9 @@ steal_range = 150.0
 steal_reach_time = 0.2
 steal_descend_time = 0.4
 kick_fx = null
+skill_icons = {}
 display_name = "Tabito Karasu"
+mvp_image = ExtResource("3_2w6vw")
 visual_root = NodePath("SprPlayer")
 
 [node name="SprPlayer" parent="." index="1" unique_id=395354675]

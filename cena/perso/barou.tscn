@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_7y5xy"]
 [ext_resource type="Texture2D" uid="uid://coyuwd4ow5mfq" path="res://img/barouicon.png" id="2_lu7d7"]
 [ext_resource type="Script" uid="uid://du734206arvny" path="res://scr/perso/barou.gd" id="2_xb4w8"]
+[ext_resource type="Texture2D" uid="uid://cqmrcih02um6m" path="res://img/mvps/barou.jpg" id="3_xb4w8"]
 
 [node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_7y5xy")]
 script = ExtResource("2_xb4w8")
@@ -29,7 +30,9 @@ predator_shot_bonus = 0.1
 tyrant_range = 200.0
 tyrant_ball_range = 100.0
 kick_fx = null
+skill_icons = {}
 display_name = "Barou Shoei"
+mvp_image = ExtResource("3_xb4w8")
 visual_root = NodePath("SprPlayer")
 
 [node name="SprPlayer" parent="." index="1" unique_id=395354675]

@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_xsmtf"]
 [ext_resource type="Script" uid="uid://cqiftx11iaqb2" path="res://scr/perso/kunigami.gd" id="2_eup2v"]
 [ext_resource type="Texture2D" uid="uid://cdgqcyc2ndpqr" path="res://img/kunigamiicon.png" id="2_ufkop"]
+[ext_resource type="Texture2D" uid="uid://d3yqc28lcak1e" path="res://img/mvps/kunigami.jpg" id="3_b553c"]
 
 [node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_xsmtf")]
 script = ExtResource("2_eup2v")
@@ -27,7 +28,9 @@ bulk_clash_bonus = 0.1
 bulk_run_bonus = 0.7
 bulk_slide_mult = 1.4
 kick_fx = null
+skill_icons = {}
 display_name = "Kunigami Rensuke"
+mvp_image = ExtResource("3_b553c")
 visual_root = NodePath("SprPlayer")
 
 [node name="SprPlayer" parent="." index="1" unique_id=395354675]

@@ -3,6 +3,7 @@
 [ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_aypui"]
 [ext_resource type="Script" uid="uid://ccslhyyp5gdn1" path="res://scr/perso/aiku.gd" id="2_5wsq7"]
 [ext_resource type="Texture2D" uid="uid://bh64n1h7aisuq" path="res://img/aikuicon.png" id="2_deyxm"]
+[ext_resource type="Texture2D" uid="uid://dg22w5o4dkgky" path="res://img/mvps/aiku.jpg" id="3_u3y82"]
 
 [node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_aypui")]
 script = ExtResource("2_5wsq7")
@@ -29,6 +30,7 @@ wall_cooldown = 2
 kick_fx = null
 skill_icons = {}
 display_name = "Oliver Aiku"
+mvp_image = ExtResource("3_u3y82")
 visual_root = NodePath("SprPlayer")
 
 [node name="SprPlayer" parent="." index="1" unique_id=395354675]
