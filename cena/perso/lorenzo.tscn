@@ -41,5 +41,5 @@ mvp_image = ExtResource("3_2280n")
 visual_root = NodePath("SprPlayer")
 
 [node name="SprPlayer" parent="." index="1" unique_id=395354675]
-scale = Vector2(0.14, 0.14)
+scale = Vector2(0.2, 0.2)
 texture = ExtResource("2_ahf8w")

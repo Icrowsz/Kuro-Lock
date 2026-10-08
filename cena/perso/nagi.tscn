@@ -1,0 +1,46 @@
+[gd_scene format=3 uid="uid://djlhq7murf0g8"]
+
+[ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_uayoi"]
+[ext_resource type="Script" uid="uid://ceyy1j1jswi3s" path="res://scr/perso/nagi.gd" id="2_hdk36"]
+[ext_resource type="Texture2D" uid="uid://d3vvj1s4xqat0" path="res://img/nagiicon.png" id="2_wgyk0"]
+[ext_resource type="Texture2D" uid="uid://dtmaipte0k8i3" path="res://img/mvps/nagi.jpg" id="3_hdk36"]
+
+[node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_uayoi")]
+script = ExtResource("2_hdk36")
+trap_range = 140.0
+trap_stop_distance = 32.0
+trap_leap_time = 0.3
+max_traps_per_turn = 1
+chance_heavy = 0.4
+chance_bicycle = 0.45
+heavy_cooldown = 2
+heavy_uses_qte = true
+bicycle_uses_qte = true
+zero_cooldown = 3
+zero_ball_distance = 34.0
+zero_trigger_radius = 80.0
+zero_hold_distance = 110.0
+zero_extra_skills = 1
+fake_cooldown = 2
+fake_bonus = 0.07
+fake_enemy_radius = 140.0
+fake_travel = 70.0
+fake_lift = 18.0
+fake_out_time = 0.18
+fake_back_time = 0.22
+lift_cooldown = 1
+lift_time = 0.3
+control_cooldown = 1
+control_extra_skills = 1
+control_is_free = true
+soft_fx = null
+heavy_fx = null
+bicycle_fx = null
+skill_icons = {}
+display_name = "Seishiro Nagi"
+mvp_image = ExtResource("3_hdk36")
+visual_root = NodePath("SprPlayer")
+
+[node name="SprPlayer" parent="." index="1" unique_id=395354675]
+scale = Vector2(0.2, 0.2)
+texture = ExtResource("2_wgyk0")

@@ -5,6 +5,7 @@
 [ext_resource type="Script" uid="uid://14n0b1oxcpd" path="res://scr/action_menu.gd" id="2_7ije6"]
 [ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="3_y3eto"]
 [ext_resource type="PackedScene" uid="uid://bcstqrdud6opd" path="res://cena/bola.tscn" id="4_mk8v6"]
+[ext_resource type="Script" uid="uid://ma4vcvpvpn8j" path="res://scr/game_camera.gd" id="5_4fnda"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_g6c8f"]
 size = Vector2(144, 1344)
@@ -59,6 +60,7 @@ manager = NodePath("../MatchManager")
 
 [node name="Camera2D" type="Camera2D" parent="." unique_id=1426996834]
 zoom = Vector2(0.6, 0.6)
+script = ExtResource("5_4fnda")
 
 [node name="Player" parent="." unique_id=1241627939 instance=ExtResource("3_y3eto")]
 position = Vector2(-1408, -160)

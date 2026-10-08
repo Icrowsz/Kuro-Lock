@@ -576,7 +576,7 @@ func get_shot_chance(kind: KickType) -> float:
 ## anim = animação da habilidade (vazio = a do tipo de chute: kick, volley...).
 func kick_ball(ball: Ball, direction: Vector2, kind: KickType, qte_success: bool = true,
 		chance_override: float = -1.0, ignore_self_collision: bool = false,
-		fx: KickFX = null, anim: StringName = &"") -> void:
+		fx: KickFX = null, anim: StringName = &"", on_kick: Callable = Callable()) -> void:
 	# Multiplicador de força do próximo chute (gasto aqui, mesmo se a ação for cancelada)
 	var force_mult: float = next_kick_force_mult
 	next_kick_force_mult = 1.0
@@ -624,6 +624,9 @@ func kick_ball(ball: Ball, direction: Vector2, kind: KickType, qte_success: bool
 	# Aura + partículas da habilidade (depois do kick, que já registrou o toque)
 	if fx:
 		ball.play_fx(fx)
+		
+	if on_kick.is_valid():
+		on_kick.call(ball, dir, speed)
 
 	await get_tree().create_timer(0.15).timeout
 
