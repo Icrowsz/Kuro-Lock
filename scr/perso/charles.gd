@@ -77,7 +77,7 @@ enum TauntState { NONE, HOLDING, STUCK }
 @export var taunt_grab_time: float = 0.15          # tempo que a bola leva para grudar
 @export var taunt_ball_offset: float = 2.0         # folga entre o Charles e a bola grudada
 @export var taunt_trigger_radius: float = 75.0     # adversário a esta distância da bola = tentou interagir
-@export var taunt_dodge_distance: float = 150.0    # quanto Charles (e a bola) desvia
+@export var taunt_dodge_distance: float = 200.0    # quanto Charles (e a bola) desvia
 @export var taunt_dodge_time: float = 0.25
 ## Quantas rodadas a bola continua grudada DEPOIS da rodada em que o counter disparou
 ## (0 = só até essa rodada acabar)

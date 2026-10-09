@@ -3,15 +3,16 @@ extends Player
 ## Karasu. Mais um personagem do time, com 3 habilidades:
 ##
 ## 1. Corvine Feint (ação de habilidade; recarga de 3 rodadas):
-##      Karasu, com a bola, entra em pose de Counter (asas roxas de corvo translúcidas) e
-##      fica ARMADO. Se um inimigo acertar um Carrinho nele — com ele e a bola no chão, a
-##      bola ao alcance — o counter dispara sozinho (fora do turno dele, igual ao Gremlin
-##      Taunt do Charles): ele salta por cima do carrinho, a bola fica GRUDADA nele até o
-##      fim da rodada (ver _stick_ball), e ele ganha:
+##      Mecânica parecida com o Glam! da Aryu. Karasu, com a bola ao alcance (no chão ou
+##      suspensa), a SEGURA: ela fica à frente dele e nenhum adversário consegue tocar nela.
+##      Dura até o fim do próximo turno do adversário. Se um inimigo que alcança a bola chegar
+##      perto (qualquer tentativa de interagir, inclusive um Carrinho), Karasu e a bola DESVIAM
+##      (a bola fica GRUDADA nele até o fim da rodada, ver _start_feint_dodge) e ele ganha:
 ##        - +1 ação de habilidade (extra_skill_left, guardada para quando ele agir);
 ##        - +0.6s no Correr, pelas próximas 3 rodadas;
 ##        - +6% na chance de gol dos chutes dele e dos aliados próximos (mesmas 3 rodadas).
-##      Pode ser armado no chão ou suspenso; se estiver suspenso, ele cai para o chão ao usar.
+##      Sem nenhuma interação, ele solta a bola no fim do turno adversário e não ganha nada.
+##      Se for derrubado enquanto segura a bola, ele a perde.
 ##
 ## 2. Aerial Pass (ação de habilidade, com 3 variantes automáticas pela situação; recarga de
 ##      2 rodadas, compartilhada):
@@ -52,6 +53,8 @@ const CD_WINGS: StringName = &"cd_wings"
 enum AssaultVariant { NONE, AERIAL, DIVE_BOMB, RAVEN }
 ## Variante da habilidade 3, pela altura do Karasu
 enum WingsVariant { NONE, BLOCK, STEAL }
+## Estado do Corvine Feint
+enum FeintState { NONE, HOLDING }
 
 @export_group("Corvine Feint")
 @export var feint_cooldown: int = 3
@@ -60,7 +63,11 @@ enum WingsVariant { NONE, BLOCK, STEAL }
 @export_range(0.0, 1.0) var feint_shot_bonus: float = 0.06   # +6% na chance de gol (dele e dos aliados próximos)
 @export var feint_ally_range: float = 400.0            # "aliados próximos": distância até o Karasu
 @export var feint_extra_skills: int = 1                # ações de habilidade extras só dele
-@export var feint_stick_extra_rounds: int = 0          # rodadas que a bola continua grudada DEPOIS da rodada do counter
+@export var feint_stick_extra_rounds: int = 0          # rodadas que a bola continua grudada DEPOIS da rodada do desvio
+@export var feint_grab_time: float = 0.15              # tempo que a bola leva até a mão dele
+@export var feint_trigger_radius: float = 75.0         # inimigo a esta distância da bola = tentou interagir
+@export var feint_dodge_distance: float = 190.0        # quanto ele (e a bola) se afastam no desvio
+@export var feint_dodge_time: float = 0.25
 
 @export_group("Aerial Pass / Dive Bomb Assault / Raven Assault")
 @export var assault_cooldown: int = 2                  # igual para as 3 variantes
@@ -89,8 +96,10 @@ enum WingsVariant { NONE, BLOCK, STEAL }
 ## Sem imagem, o balão aparece só com o texto.
 @export var skill_icons: Dictionary = {}
 
-## Corvine Feint está armado, esperando um Carrinho inimigo disparar o counter
-var _feint_armed: bool = false
+## Corvine Feint: NONE = sem efeito; HOLDING = segurando a bola, esperando uma interação inimiga
+var _feint_state: FeintState = FeintState.NONE
+var _feint_touches: int = 0          # interaction_count da bola quando ele a pegou
+var _feint_dodging: bool = false     # está no meio do desvio
 ## Bônus do Corvine Feint vale até o fim desta rodada (-1 = inativo)
 var _feint_until_round: int = -1
 ## A bola está grudada no Karasu até o fim desta rodada (-1 = não está)
@@ -142,6 +151,20 @@ func _hook_manager() -> void:
 	var m: MatchManager = _get_manager()
 	if m:
 		m.round_started.connect(_on_round_started)
+		m.turn_ended.connect(_on_turn_ended)
+	var ball: Ball = _get_ball()
+	if ball:
+		ball.was_reset.connect(_on_ball_reset)
+
+
+## O Corvine Feint sem interação solta a bola no fim do turno do adversário
+func _on_turn_ended(ended_team: int) -> void:
+	if _feint_state == FeintState.HOLDING and ended_team != team and not _feint_dodging:
+		_end_feint_hold(true)
+
+
+func _on_ball_reset() -> void:
+	_end_feint_hold(false)   # gol / reposição: a bola já foi solta pelo próprio Ball
 
 
 func _on_round_started(new_round: int) -> void:
@@ -151,11 +174,11 @@ func _on_round_started(new_round: int) -> void:
 	queue_redraw()   # a aura do bônus e as asas somem quando acabam
 
 
-# ---------- DERRUBADO: desarma o counter ----------
+# ---------- DERRUBADO: solta a bola do Corvine Feint ----------
 
 func knock_down() -> void:
 	super()
-	_feint_armed = false
+	_end_feint_hold(true)
 	queue_redraw()
 
 
@@ -168,7 +191,7 @@ func is_feint_buff_active() -> bool:
 
 ## "Com a bola": ela tem que estar ao alcance dele (get_kick_type já confere derrubado, bola
 ## na mão do goleiro, trava de feitiço, distância e altura alcançável). Pode estar no chão
-## ou suspenso, mas não voando.
+## ou suspensa, mas ele não pode estar voando.
 func _can_arm_feint() -> bool:
 	if is_down or height_level == Heights.Level.FLYING:
 		return false
@@ -176,84 +199,154 @@ func _can_arm_feint() -> bool:
 
 
 func _feint_skill_name() -> String:
-	return "Corvine Feint (armada)" if _feint_armed else "Corvine Feint"
+	return "Corvine Feint (segurando)" if _feint_state == FeintState.HOLDING else "Corvine Feint"
 
 
+func _get_field() -> Field:
+	return get_tree().get_first_node_in_group("field") as Field
+
+
+## Mantém uma posição (global) dentro do campo
+func _clamp_to_pitch(global_p: Vector2) -> Vector2:
+	var field: Field = _get_field()
+	if field == null:
+		return global_p
+	var half: Vector2 = field.pitch_size * 0.5 - Vector2(20.0, 20.0)
+	var l: Vector2 = field.to_local(global_p)
+	l.x = clampf(l.x, -half.x, half.x)
+	l.y = clampf(l.y, -half.y, half.y)
+	return field.to_global(l)
+
+
+## Mecânica parecida com o Glam! da Aryu: Karasu SEGURA a bola (ela fica à frente dele, na
+## altura dele) e ninguém do outro time consegue tocar nela. Dura até o fim do próximo turno
+## do adversário. Se um inimigo que alcança a bola chegar perto, Karasu e a bola desviam
+## (veja _start_feint_dodge) e os bônus do Corvine Feint são liberados.
 func _use_feint() -> bool:
-	if not _can_arm_feint():
+	var m: MatchManager = _get_manager()
+	if m == null or not _can_arm_feint():
 		return false
-	if height_level != Heights.Level.GROUND:
-		land()   # suspenso: cai para o chão ao usar
-	await play_action(&"corvine_feint")
-	_feint_armed = true
+	face_towards(_get_ball().global_position - global_position)
+	if not await play_action(&"corvine_feint"):
+		return false   # ação cancelada (ex: a partida reiniciou)
+
+	var ball: Ball = _get_ball()
+	if not _can_arm_feint():   # a bola pode ter saído do alcance durante a animação
+		return false
+
+	m.clear_pending_pass()   # passe alto em andamento: a bola agora é do Karasu
+	ball.register_touch(self)
+	ball.hover_to(_stuck_ball_point(ball), height, feint_grab_time)
+	await get_tree().create_timer(feint_grab_time).timeout
+
+	_feint_touches = ball.interaction_count   # qualquer toque depois disto solta a bola
+	ball.spell_owner = self                   # adversários não conseguem tocar na bola enquanto ela está com ele
+	_feint_state = FeintState.HOLDING
 	start_cooldown(CD_FEINT, feint_cooldown)
 	queue_redraw()
 	return true
 
 
-## Counter: chamado pelo ATACANTE (dentro de _check_slide_hits do player.gd) quando o
-## Carrinho dele ia acertar o Karasu.
-func try_counter_slide(attacker: Player) -> bool:
-	if not _feint_armed or is_down:
-		return false
-	var m: MatchManager = _get_manager()
+## Enquanto segura a bola: ela acompanha o Karasu; no turno adversário, quem chegar perto
+## faz o Karasu desviar
+func _physics_process(delta: float) -> void:
+	super(delta)
+	if _feint_state != FeintState.HOLDING:
+		return
 	var ball: Ball = _get_ball()
-	if m == null or ball == null:
+	if ball == null:
+		_end_feint_hold(false)
+		return
+	# Alguém tocou/chutou a bola, ou ela foi solta por fora: acabou
+	if ball.interaction_count != _feint_touches or not ball.hovering \
+			or ball.spell_owner != self or ball.is_held():
+		_end_feint_hold(false)
+		return
+	if is_down:   # derrubado: perde a bola
+		_end_feint_hold(true)
+		return
+
+	_place_stuck_ball(ball)
+	_check_feint_trigger(ball)
+
+
+## Qualquer inimigo que consiga alcançar a bola e chegue perto dela no turno dele "tentou
+## interagir": é o gatilho do desvio (o mesmo critério do Glam!)
+func _check_feint_trigger(ball: Ball) -> void:
+	var m: MatchManager = _get_manager()
+	# Só o turno do adversário conta (no turno do próprio Karasu ninguém "tenta" nada)
+	if m == null or m.match_over or m.current_team == team:
+		return
+	for p: Player in get_tree().get_nodes_in_group("players"):
+		if p.team == team or p.is_down or not p.can_reach_level(ball.get_level()):
+			continue
+		var radius: float = maxf(feint_trigger_radius, p.kick_range + 5.0)
+		if p.global_position.distance_to(ball.global_position) <= radius:
+			_start_feint_dodge(p.global_position)
+			return
+
+
+## Carrinho que acerta o Karasu enquanto ele segura a bola também conta como interação: o
+## desvio dispara (ou, se ele já está desviando, o carrinho passa) e quem deu o carrinho não
+## derruba ele. Chamado pelo ATACANTE (dentro de _check_slide_hits do player.gd).
+func try_counter_slide(attacker: Player) -> bool:
+	if is_down:
 		return false
-	# Se a situação mudou (ele pulou, a bola subiu ou ficou longe...) o counter não existe
-	# mais, mas continua armado até ele realmente disparar uma vez com a bola nos pés.
-	if height_level != Heights.Level.GROUND or ball.is_held() \
-			or ball.get_level() != Heights.Level.GROUND \
-			or global_position.distance_to(ball.global_position) > kick_range:
-		return false
-
-	_feint_armed = false
-	_run_feint_counter(attacker, m)
-	return true
+	if _feint_state == FeintState.HOLDING:
+		hop_over()   # salto por cima do carrinho (só visual)
+		_start_feint_dodge(attacker.global_position)
+		return true
+	return _feint_dodging
 
 
-## Dispara fora da vez do Karasu: ele salta por cima do carrinho (hop_over(), só visual), a
-## bola gruda nele, e ele ganha a ação de habilidade extra e os bônus de 3 rodadas.
-func _run_feint_counter(attacker: Player, m: MatchManager) -> void:
-	hop_over()
+## O desvio: Karasu e a bola saem de perto de quem tentou interagir. Aqui ele recebe os
+## bônus (+1 ação de habilidade, +Correr e +chance de gol por feint_rounds rodadas) e a
+## bola continua grudada nele até o fim da rodada.
+func _start_feint_dodge(from: Vector2) -> void:
+	var m: MatchManager = _get_manager()
+	if m == null:
+		return
+	_feint_state = FeintState.NONE
+	_feint_dodging = true
 	extra_skill_left += feint_extra_skills
 	_feint_until_round = m.round_number + feint_rounds
-	_stick_ball(attacker, m)
+	_stuck_until_round = m.round_number + feint_stick_extra_rounds   # o _update_stuck_ball leva a bola junto
+
+	var away: Vector2 = global_position - from
+	away = away.normalized() if away.length() > 1.0 else Vector2(-facing, 0.0)
+	face_towards(away)   # a bola fica do lado oposto ao inimigo
+	var dest: Vector2 = _clamp_to_pitch(global_position + away * feint_dodge_distance)
+	queue_redraw()
+	var tw := create_tween()
+	tw.tween_property(self, "global_position", dest, feint_dodge_time) \
+		.set_trans(Tween.TRANS_BACK).set_ease(Tween.EASE_OUT)
+	await get_tree().create_timer(feint_dodge_time).timeout
+	_feint_dodging = false
+
+
+## release = true solta a bola (cai e rola); false = a bola já foi tocada/solta por outro
+func _end_feint_hold(release: bool) -> void:
+	if _feint_state != FeintState.HOLDING:
+		return
+	_feint_state = FeintState.NONE
+	var ball: Ball = _get_ball()
+	if release and ball != null and ball.spell_owner == self and ball.hovering and not ball.is_held():
+		ball.release_hover()
 	queue_redraw()
 
 
-## A bola gruda no Karasu durante o counter e FICA grudada até o fim da rodada (ou até
-## alguém do time dele tocar nela de novo). Mesma ideia do Gremlin Taunt do Charles:
-## - hovering = true desliga a física da bola, então ninguém empurra ela correndo;
-## - spell_owner = self é a trava que o projeto já tem (a do Arresto Momentum do Ness):
-##   is_locked_for() faz o chute dos adversários devolver NONE e o carrinho também respeita;
-## - o _process() mantém a bola nos pés dele (se ele andar, ela vai junto).
-## Marca também o Carrinho do atacante como já tendo "gasto" o toque na bola.
-func _stick_ball(attacker: Player, m: MatchManager) -> void:
-	var ball: Ball = _get_ball()
-	if ball == null:
-		return
-	m.clear_pending_pass()   # a bola não pode ficar presa a um passe alto em andamento
-	ball.release_hover()     # limpa qualquer trava/pairo anterior
-	ball.velocity = Vector2.ZERO
-	ball.vel_z = 0.0
-	ball.height = 0.0
-	ball.pending_shot_chance = Ball.NO_SHOT
-	ball.hovering = true
-	ball.spell_owner = self
-	_place_stuck_ball(ball)
-	ball.register_touch(self)
-	attacker._slide_hit_ball = true
-	_stuck_until_round = m.round_number + feint_stick_extra_rounds
+## Posição da bola grudada: à frente do Karasu, do lado para onde ele está virado
+func _stuck_ball_point(ball: Ball) -> Vector2:
+	return global_position + Vector2(facing, 0.0) * (body_radius + ball.collision_radius + 2.0)
 
 
 func _place_stuck_ball(ball: Ball) -> void:
-	var offset: Vector2 = Vector2(facing, 0.0) * (body_radius + ball.collision_radius + 2.0)
-	ball.global_position = global_position + offset
+	ball.global_position = _stuck_ball_point(ball)
+	ball.height = height   # a bola acompanha a altura dele
 
 
-## Mantém a bola grudada enquanto o efeito durar. Se alguém do time dele chutou/passou (o
-## kick() da bola chama release_hover(), que limpa o spell_owner), o efeito acaba.
+## Mantém a bola grudada depois do desvio, até o fim da rodada. Se alguém do time dele
+## chutou/passou (o kick() da bola chama release_hover(), que limpa o spell_owner), acaba.
 func _update_stuck_ball() -> void:
 	if _stuck_until_round < 0:
 		return
@@ -678,8 +771,8 @@ func can_use_skill(skill_id: StringName = &"default") -> bool:
 		return false
 	match skill_id:
 		SKILL_FEINT:
-			# sem rearmar enquanto já está armado
-			return not is_on_cooldown(CD_FEINT) and not _feint_armed and _can_arm_feint()
+			# sem rearmar enquanto já está segurando a bola
+			return not is_on_cooldown(CD_FEINT) and _feint_state == FeintState.NONE and _can_arm_feint()
 		SKILL_ASSAULT:
 			return not is_on_cooldown(CD_ASSAULT) and _assault_usable()
 		SKILL_WINGS:
@@ -710,10 +803,10 @@ func get_skill_info(skill_id: StringName) -> Dictionary:
 	match skill_id:
 		SKILL_FEINT:
 			title = "Corvine Feint"
-			text = ("Com a bola ao alcance (no chão ou suspenso, nunca voando), Karasu entra em pose de counter. Se um inimigo acertar um Carrinho nele, ele salta por cima, a bola fica grudada nele até o fim da rodada, e ele ganha:\n"
+			text = ("Com a bola ao alcance (no chão ou suspenso, nunca voando), Karasu a segura. Dura até o fim do próximo turno do adversário: se um inimigo que alcança a bola chegar perto (ou acertar um Carrinho nele), Karasu e a bola DESVIAM e ele ganha:\n"
 				+ "• +%d ação de habilidade extra;\n"
 				+ "• +%.1f s no Correr e +%d%% de chance de gol (dele e dos aliados a até %d px) por %d rodadas depois da atual.\n"
-				+ "Se ele for derrubado antes, o counter se desfaz. Recarga: %d rodadas.") % [
+				+ "Depois de desviar, a bola fica grudada nele até o fim da rodada. Se ele for derrubado antes, solta a bola. Recarga: %d rodadas.") % [
 				feint_extra_skills, feint_run_bonus, _pct(feint_shot_bonus), int(feint_ally_range),
 				feint_rounds, feint_cooldown]
 		SKILL_ASSAULT:
@@ -759,7 +852,8 @@ func get_skill_info(skill_id: StringName) -> Dictionary:
 
 func reset_for_new_match() -> void:
 	super()
-	_feint_armed = false
+	_end_feint_hold(true)
+	_feint_dodging = false
 	_feint_until_round = -1
 	_raven_active = false
 	_raven_contact = false
@@ -777,7 +871,7 @@ func _process(delta: float) -> void:
 	super(delta)
 	_update_stuck_ball()
 	_update_grabs()
-	if _feint_armed or not _grabbed.is_empty():
+	if _feint_state == FeintState.HOLDING or not _grabbed.is_empty():
 		queue_redraw()
 
 
@@ -789,8 +883,8 @@ func _draw() -> void:
 	if is_feint_buff_active():
 		draw_arc(center, placeholder_radius + 6.0, 0.0, TAU, 40, Color(0.7, 0.35, 1.0, 0.8), 2.0)
 
-	# Asas roxas translúcidas = pose de counter (armado)
-	if _feint_armed:
+	# Asas roxas translúcidas = pose de counter (segurando a bola)
+	if _feint_state == FeintState.HOLDING:
 		_draw_wings(center)
 
 	# Ligação roxa até cada inimigo agarrado pelo Wings Block

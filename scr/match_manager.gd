@@ -490,6 +490,10 @@ func _on_player_clicked(player: Player) -> void:
 func select_protagonist(player: Player) -> void:
 	if phase != Phase.CHOOSING_PROTAGONIST or player.team != current_team:
 		return
+	if is_protagonist_blocked(player):
+		pass_hint = "%s está proibido de ser Protagonista!" % player.get_display_name()
+		state_changed.emit()
+		return
 
 	protagonist = player
 	for p in get_team_players(current_team):
@@ -502,6 +506,13 @@ func select_protagonist(player: Player) -> void:
 
 	set_active_player(protagonist)
 	_set_phase(Phase.CHOOSING_ACTION)
+	
+## Habilidades de controle (ex: Adequation do Hugo) podem proibir um jogador de ser Protagonista
+func is_protagonist_blocked(player: Player) -> bool:
+	for src in get_tree().get_nodes_in_group("control_sources"):
+		if src != player and src.has_method("blocks_protagonist") and src.blocks_protagonist(player):
+			return true
+	return false
 
 
 ## Troca quem vai agir (Protagonista ou algum Secundário do time)

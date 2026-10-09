@@ -52,7 +52,7 @@ enum GlamState { NONE, HOLDING, MIRROR }
 @export var glam_grab_time: float = 0.15
 @export var glam_ball_offset: float = 22.0       # a bola fica à frente dele
 @export var glam_trigger_radius: float = 75.0    # adversário a esta distância da bola = tentou interagir
-@export var glam_dodge_distance: float = 150.0
+@export var glam_dodge_distance: float = 160.0
 @export var glam_dodge_time: float = 0.25
 @export var glam_cooldown: int = 2
 
