@@ -15,7 +15,7 @@ extends Camera2D
 const ACTION_TOGGLE: StringName = &"toggle_camera"
 
 ## Zoom ao focar, em múltiplos do zoom normal da câmera (1.6 = 60% mais perto)
-@export var focus_zoom: float = 1.6
+@export var focus_zoom: float = 1.7
 ## Zoom enquanto escolhe o alvo do Passe
 @export var pass_target_zoom: float = 1.15
 ## Velocidade da transição (maior = mais rápido)

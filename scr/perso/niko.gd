@@ -135,7 +135,7 @@ func _on_pass_completed(passer: Player, _target: Player) -> void:
 ## Um chute do próprio Niko não é um passe: o bônus não vale para o que vier depois dele
 func kick_ball(ball: Ball, direction: Vector2, kind: KickType, qte_success: bool = true,
 		chance_override: float = -1.0, ignore_self_collision: bool = false,
-		fx: KickFX = null, anim: StringName = &"") -> void:
+		fx: KickFX = null, anim: StringName = &"", on_kick: Callable = Callable()) -> void:
 	_pass_valid = false
 	await super(ball, direction, kind, qte_success, chance_override, ignore_self_collision, fx, anim)
 

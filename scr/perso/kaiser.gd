@@ -56,8 +56,8 @@ enum ServantType { WAITER, CLOWN }
 ## Quanto tempo a bola é conduzida (curva + subida até o nível Suspenso); depois cai normal
 @export var magnus_flight_time: float = 0.9
 ## Kaiser Impact: multiplicador de força (rápido) e por quanto tempo a bola fica Suspensa
-@export var impact_force_mult: float = 1.6
-@export var impact_flight_time: float = 1.2
+@export var impact_force_mult: float = 1.1
+@export var impact_flight_time: float = 0.2
 
 @export_group("Empire")
 @export var empire_range: float = 450.0             # alcance para marcar os servos
@@ -125,9 +125,9 @@ func _ready() -> void:
 ## Azul-escuro com partículas douradas
 func _make_kick_fx() -> KickFX:
 	var fx := KickFX.new()
-	fx.color = Color(0.08, 0.15, 0.7)
+	fx.color = Color(0.107, 0.193, 0.845, 1.0)
 	fx.trail_width = 14.0
-	fx.particle_color = Color(1.0, 0.82, 0.25)
+	fx.particle_color = Color(0.716, 0.882, 0.853, 1.0)
 	fx.amount = 22
 	fx.lifetime = 0.55
 	fx.speed_min = 15.0
@@ -215,12 +215,12 @@ func _add_servant(p: Player, type: ServantType) -> void:
 	var mark := FlowerMark.new()
 	if type == ServantType.WAITER:
 		_waiters.append(p)
-		mark.petal_color = Color(1.0, 0.82, 0.22)    # flor dourada
+		mark.petal_color = Color(0.817, 0.655, 0.0, 1.0)    # flor dourada
 		mark.core_color = Color(0.08, 0.15, 0.6)
 	else:
 		_clowns.append(p)
 		mark.petal_color = Color(0.08, 0.15, 0.6)    # flor azul-escura
-		mark.core_color = Color(1.0, 0.82, 0.22)
+		mark.core_color = Color(0.817, 0.655, 0.0, 1.0)
 	p.add_child(mark)
 	_marks[p] = mark
 
@@ -709,8 +709,8 @@ func _draw() -> void:
 	super()
 	var center := Vector2(0.0, -height)
 	var ring: float = placeholder_radius + 26.0
-	var gold := Color(1.0, 0.82, 0.25, 0.95)
-	var blue := Color(0.1, 0.2, 0.75, 0.95)
+	var gold := Color(0.816, 0.655, 0.0, 0.588)
+	var blue := Color(0.102, 0.2, 0.749, 0.588)
 
 	# Predator: anel dourado com "espinhos"
 	if is_predator_active():

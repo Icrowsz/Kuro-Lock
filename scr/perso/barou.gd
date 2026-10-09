@@ -143,7 +143,7 @@ func _on_run_finished() -> void:
 ## Chutar (qualquer chute, geral ou de habilidade): +10% enquanto o Predator Eye estiver ativo
 func kick_ball(ball: Ball, direction: Vector2, kind: KickType, qte_success: bool = true,
 		chance_override: float = -1.0, ignore_self_collision: bool = false,
-		fx: KickFX = null, anim: StringName = &"") -> void:
+		fx: KickFX = null, anim: StringName = &"", on_kick: Callable = Callable()) -> void:
 	if _predator_active():
 		var base_chance: float = chance_override if chance_override >= 0.0 else get_shot_chance(kind)
 		chance_override = base_chance + predator_shot_bonus

@@ -1,0 +1,127 @@
+[gd_scene format=3 uid="uid://vyuwdkpu5dcw"]
+
+[ext_resource type="Script" uid="uid://c0u5r7smsq811" path="res://scr/match_manager.gd" id="1_3tt73"]
+[ext_resource type="Script" uid="uid://ip8snkgmpblr" path="res://scr/field.gd" id="1_mk8v6"]
+[ext_resource type="Script" uid="uid://14n0b1oxcpd" path="res://scr/action_menu.gd" id="2_7ije6"]
+[ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="3_y3eto"]
+[ext_resource type="PackedScene" uid="uid://bcstqrdud6opd" path="res://cena/bola.tscn" id="4_mk8v6"]
+[ext_resource type="Script" uid="uid://ma4vcvpvpn8j" path="res://scr/game_camera.gd" id="5_4fnda"]
+[ext_resource type="PackedScene" uid="uid://bk2mu2jugbk7l" path="res://cena/perso/isagi.tscn" id="7_c0jyn"]
+[ext_resource type="PackedScene" uid="uid://cbynfs6yl1kgu" path="res://cena/perso/ness.tscn" id="8_v6806"]
+[ext_resource type="PackedScene" uid="uid://bbspfq1cfgcub" path="res://cena/perso/kaiser.tscn" id="9_gpger"]
+[ext_resource type="PackedScene" uid="uid://d06agr5ifmyo3" path="res://cena/perso/raichi.tscn" id="11_g6h8e"]
+[ext_resource type="PackedScene" uid="uid://celvxhj05n28w" path="res://cena/perso/niko.tscn" id="11_gpger"]
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_g6c8f"]
+size = Vector2(144, 1344)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_pnk5n"]
+size = Vector2(144, 1344)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_85mlr"]
+size = Vector2(2688, 64)
+
+[sub_resource type="RectangleShape2D" id="RectangleShape2D_jb6vp"]
+size = Vector2(2688, 64)
+
+[node name="Main" type="Node2D" unique_id=1825738983]
+
+[node name="Barreiras" type="StaticBody2D" parent="." unique_id=1114693915]
+
+[node name="Direita" type="CollisionShape2D" parent="Barreiras" unique_id=1145458346]
+position = Vector2(1272, 0)
+shape = SubResource("RectangleShape2D_g6c8f")
+
+[node name="Esquerda" type="CollisionShape2D" parent="Barreiras" unique_id=2112981153]
+position = Vector2(-1272, 0)
+shape = SubResource("RectangleShape2D_pnk5n")
+
+[node name="Cima" type="CollisionShape2D" parent="Barreiras" unique_id=1451737163]
+position = Vector2(0, -704)
+shape = SubResource("RectangleShape2D_85mlr")
+
+[node name="Baixo" type="CollisionShape2D" parent="Barreiras" unique_id=1836806044]
+position = Vector2(0, 704)
+shape = SubResource("RectangleShape2D_jb6vp")
+
+[node name="Field" type="Node2D" parent="." unique_id=679632803 node_paths=PackedStringArray("ball")]
+script = ExtResource("1_mk8v6")
+ball = NodePath("../Bola")
+pitch_size = Vector2(2400, 1350)
+margin = 500.0
+
+[node name="MatchManager" type="Node2D" parent="." unique_id=1461380594]
+script = ExtResource("1_3tt73")
+use_formation_setup = false
+reposition_time = 0.1
+volley_qte_time_per_key = 0.8
+ground_pass_range = 350.0
+high_pass_range = 450.0
+
+[node name="Bola" parent="." unique_id=235203312 instance=ExtResource("4_mk8v6")]
+position = Vector2(101, -136)
+
+[node name="ActionMenu" type="CanvasLayer" parent="." unique_id=362173156 node_paths=PackedStringArray("manager")]
+script = ExtResource("2_7ije6")
+manager = NodePath("../MatchManager")
+
+[node name="Camera2D" type="Camera2D" parent="." unique_id=1426996834]
+zoom = Vector2(0.6, 0.6)
+script = ExtResource("5_4fnda")
+
+[node name="Player" parent="." unique_id=1241627939 instance=ExtResource("3_y3eto")]
+position = Vector2(-1408, -160)
+
+[node name="Player2" parent="." unique_id=365574374 instance=ExtResource("3_y3eto")]
+position = Vector2(-1408, -96)
+
+[node name="Player3" parent="." unique_id=1642932708 instance=ExtResource("3_y3eto")]
+position = Vector2(-1408, -32)
+
+[node name="Player4" parent="." unique_id=1052463267 instance=ExtResource("3_y3eto")]
+position = Vector2(-1408, 32)
+
+[node name="Player5" parent="." unique_id=144135552 instance=ExtResource("3_y3eto")]
+position = Vector2(-1408, 96)
+
+[node name="Player6" parent="." unique_id=777035109 instance=ExtResource("3_y3eto")]
+position = Vector2(-1408, 160)
+
+[node name="Player8" parent="." unique_id=1720258962 instance=ExtResource("3_y3eto")]
+position = Vector2(1408, -160)
+team = 1
+
+[node name="Player9" parent="." unique_id=838970359 instance=ExtResource("3_y3eto")]
+position = Vector2(1408, -96)
+team = 1
+
+[node name="Player10" parent="." unique_id=495205438 instance=ExtResource("3_y3eto")]
+position = Vector2(1408, -32)
+team = 1
+
+[node name="Player11" parent="." unique_id=71110511 instance=ExtResource("3_y3eto")]
+position = Vector2(1408, 32)
+team = 1
+
+[node name="Player12" parent="." unique_id=1171416633 instance=ExtResource("3_y3eto")]
+position = Vector2(1408, 96)
+team = 1
+
+[node name="Player13" parent="." unique_id=1882428437 instance=ExtResource("3_y3eto")]
+position = Vector2(1408, 160)
+team = 1
+
+[node name="Player7" parent="." unique_id=1278823216 instance=ExtResource("7_c0jyn")]
+position = Vector2(208, -48)
+
+[node name="Player14" parent="." unique_id=1098775635 instance=ExtResource("8_v6806")]
+position = Vector2(144, -32)
+
+[node name="Player15" parent="." unique_id=65792651 instance=ExtResource("9_gpger")]
+position = Vector2(48, -136)
+
+[node name="Player17" parent="." unique_id=1920602225 instance=ExtResource("11_g6h8e")]
+position = Vector2(280, 0)
+
+[node name="Player16" parent="." unique_id=1569727961 instance=ExtResource("11_gpger")]
+position = Vector2(208, 8)
