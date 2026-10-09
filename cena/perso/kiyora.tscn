@@ -1,0 +1,26 @@
+[gd_scene format=3 uid="uid://dpolhysjv4brb"]
+
+[ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="1_00uok"]
+[ext_resource type="Texture2D" uid="uid://c8250g8uhti36" path="res://img/kiyoraicon.png" id="2_e02vq"]
+[ext_resource type="Script" uid="uid://cxxx21e4q20pa" path="res://scr/perso/kiyora.gd" id="2_q56ba"]
+[ext_resource type="Texture2D" uid="uid://ca4qgtaglld8f" path="res://img/mvps/kiyora.jpg" id="3_q56ba"]
+
+[node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_00uok")]
+script = ExtResource("2_q56ba")
+dance_cooldown = 2
+dance_pull_time = 0.25
+dance_trap_rounds = 2
+backspin_rounds = 3
+border_cooldown = 2
+gods_land_radius = 500.0
+wind_cooldown = 2
+six_step_slide_mult = 1.8
+kick_fx = null
+skill_icons = {}
+display_name = "Kiyora Jin"
+mvp_image = ExtResource("3_q56ba")
+visual_root = NodePath("SprPlayer")
+
+[node name="SprPlayer" parent="." index="1" unique_id=395354675]
+scale = Vector2(0.21, 0.21)
+texture = ExtResource("2_e02vq")

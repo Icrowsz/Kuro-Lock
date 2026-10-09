@@ -6,6 +6,10 @@
 [ext_resource type="PackedScene" uid="uid://cibqlwhi4brii" path="res://cena/player.tscn" id="3_y3eto"]
 [ext_resource type="PackedScene" uid="uid://bcstqrdud6opd" path="res://cena/bola.tscn" id="4_mk8v6"]
 [ext_resource type="Script" uid="uid://ma4vcvpvpn8j" path="res://scr/game_camera.gd" id="5_4fnda"]
+[ext_resource type="PackedScene" uid="uid://dpolhysjv4brb" path="res://cena/perso/kiyora.tscn" id="7_foyax"]
+[ext_resource type="PackedScene" uid="uid://bk2mu2jugbk7l" path="res://cena/perso/isagi.tscn" id="8_v6806"]
+[ext_resource type="PackedScene" uid="uid://bbspfq1cfgcub" path="res://cena/perso/kaiser.tscn" id="9_gpger"]
+[ext_resource type="PackedScene" uid="uid://nudb1fidas5y" path="res://cena/perso/charles.tscn" id="10_g6h8e"]
 
 [sub_resource type="RectangleShape2D" id="RectangleShape2D_g6c8f"]
 size = Vector2(144, 1344)
@@ -47,12 +51,14 @@ margin = 500.0
 
 [node name="MatchManager" type="Node2D" parent="." unique_id=1461380594]
 script = ExtResource("1_3tt73")
+use_formation_setup = false
 reposition_time = 0.1
 volley_qte_time_per_key = 0.8
 ground_pass_range = 350.0
 high_pass_range = 450.0
 
 [node name="Bola" parent="." unique_id=235203312 instance=ExtResource("4_mk8v6")]
+position = Vector2(288, 120)
 
 [node name="ActionMenu" type="CanvasLayer" parent="." unique_id=362173156 node_paths=PackedStringArray("manager")]
 script = ExtResource("2_7ije6")
@@ -102,4 +108,17 @@ team = 1
 
 [node name="Player13" parent="." unique_id=1882428437 instance=ExtResource("3_y3eto")]
 position = Vector2(1408, 160)
+team = 1
+
+[node name="Player7" parent="." unique_id=997284659 instance=ExtResource("7_foyax")]
+position = Vector2(240, 136)
+
+[node name="Player14" parent="." unique_id=205729449 instance=ExtResource("8_v6806")]
+position = Vector2(392, -136)
+
+[node name="Player15" parent="." unique_id=1074262399 instance=ExtResource("9_gpger")]
+position = Vector2(392, -8)
+
+[node name="Player16" parent="." unique_id=127880647 instance=ExtResource("10_g6h8e")]
+position = Vector2(248, 64)
 team = 1

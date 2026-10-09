@@ -5,7 +5,7 @@
 [ext_resource type="Texture2D" uid="uid://bx22x62gq23ud" path="res://img/sendouicon.png" id="3_0o8pl"]
 [ext_resource type="Texture2D" uid="uid://u53xjf52w282" path="res://img/mvps/sendou.jpg" id="3_fvyfi"]
 
-[node name="Player" unique_id=1241627939 instance=ExtResource("1_qmaa4")]
+[node name="Player" unique_id=1241627939 node_paths=PackedStringArray("visual_root") instance=ExtResource("1_qmaa4")]
 script = ExtResource("2_fvyfi")
 chance_ace = 0.4
 chance_star = 0.45
@@ -33,6 +33,7 @@ kick_fx = null
 skill_icons = {}
 display_name = "Sendou Shuto"
 mvp_image = ExtResource("3_fvyfi")
+visual_root = NodePath("SprPlayer")
 
 [node name="SprPlayer" parent="." index="1" unique_id=395354675]
 scale = Vector2(0.2, 0.2)

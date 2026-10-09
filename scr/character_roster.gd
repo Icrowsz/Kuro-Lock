@@ -20,6 +20,7 @@ const CHARACTERS: Array[Dictionary] = [
 	{"id": "isagi", "name": "Isagi", "scene": "res://cena/perso/isagi.tscn"},
 	{"id": "kaiser", "name": "Kaiser", "scene": "res://cena/perso/kaiser.tscn"},
 	{"id": "karasu", "name": "Karasu", "scene": "res://cena/perso/karasu.tscn"},
+	{"id": "kiyora", "name": "Kiyora", "scene": "res://cena/perso/kiyora.tscn"},
 	{"id": "kunigami", "name": "Kunigami", "scene": "res://cena/perso/kunigami.tscn"},
 	{"id": "kurona", "name": "Kurona", "scene": "res://cena/perso/kurona.tscn"},
 	{"id": "lorenzo", "name": "Lorenzo", "scene": "res://cena/perso/lorenzo.tscn"},
