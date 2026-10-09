@@ -85,7 +85,7 @@ const PURPLE_DARK := Color(0.24, 0.08, 0.40)
 @export var intercept_pass_range: float = 650.0  # alcance mínimo do passe alto (cresce se o aliado estiver mais longe)
 
 @export_group("Ace Eater / Cemetery")
-@export var ace_range: float = 1000.0            # "alcance gigante"
+@export var ace_range: float = 600.0            # "alcance gigante"
 @export var ace_rounds: int = 3
 @export_range(0.0, 1.0) var ace_shot_penalty: float = 0.15
 @export var ace_cooldown: int = 3
