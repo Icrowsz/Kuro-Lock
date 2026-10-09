@@ -189,7 +189,7 @@ func _on_slide_finished() -> void:
 ## Chutar (geral): +5% de chance. Os chutes das habilidades não entram aqui (_in_skill).
 func kick_ball(ball: Ball, direction: Vector2, kind: KickType, qte_success: bool = true,
 		chance_override: float = -1.0, ignore_self_collision: bool = false,
-		fx: KickFX = null, anim: StringName = &"") -> void:
+		fx: KickFX = null, anim: StringName = &"", on_kick: Callable = Callable()) -> void:
 	if not _in_skill and _spend_bulk_charge():
 		var base_chance: float = chance_override if chance_override >= 0.0 else get_shot_chance(kind)
 		chance_override = base_chance + bulk_shot_bonus

@@ -218,7 +218,7 @@ func get_shot_chance(kind: KickType) -> float:
 ## Depois de qualquer chute dele o bônus do passe foi usado (a chance já foi calculada lá dentro)
 func kick_ball(ball: Ball, direction: Vector2, kind: KickType, qte_success: bool = true,
 		chance_override: float = -1.0, ignore_self_collision: bool = false,
-		fx: KickFX = null, anim: StringName = &"") -> void:
+		fx: KickFX = null, anim: StringName = &"", on_kick: Callable = Callable()) -> void:
 	await super(ball, direction, kind, qte_success, chance_override, ignore_self_collision, fx, anim)
 	_friend_pass_valid = false
 
