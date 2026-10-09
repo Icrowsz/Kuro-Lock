@@ -9,7 +9,8 @@
 script = ExtResource("2_q56ba")
 dance_cooldown = 2
 dance_pull_time = 0.25
-dance_trap_rounds = 2
+dance_ball_offset = 24.0
+dance_trigger_radius = 75.0
 backspin_rounds = 3
 border_cooldown = 2
 gods_land_radius = 500.0
@@ -22,5 +23,5 @@ mvp_image = ExtResource("3_q56ba")
 visual_root = NodePath("SprPlayer")
 
 [node name="SprPlayer" parent="." index="1" unique_id=395354675]
-scale = Vector2(0.21, 0.21)
+scale = Vector2(0.2, 0.2)
 texture = ExtResource("2_e02vq")

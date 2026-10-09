@@ -4,10 +4,12 @@ extends Player
 ## NÃO precisa de nenhuma edição em outros arquivos.
 ##
 ## 1. Dance Battle (ação de habilidade, recarga de 2 rodadas): com a bola ao alcance (no chão ou
-##      suspensa) e o Kiyora no chão, ele PUXA a bola para perto e a deixa "armada". Se um
-##      inimigo interagir com ela de qualquer forma (chute, passe, carrinho, encostar...), o
-##      inimigo cai, a bola fica onde estava e o Kiyora libera o BACKSPIN: pelas próximas 3
-##      rodadas, as habilidades dele ficam melhores.
+##      suspensa) e o Kiyora no chão, ele PUXA a bola e a GRUDA nele: ela acompanha o Kiyora e os
+##      adversários não conseguem tocar nela nem mover para longe (mesma trava do Zero Reset
+##      Turn / Glam: spell_owner). Se um inimigo tentar interagir (correr/deslizar para perto
+##      da bola ou dar Carrinho no Kiyora), o inimigo cai e o Kiyora libera o BACKSPIN: pelas
+##      próximas 3 rodadas, as habilidades dele ficam melhores. A bola solta no fim do
+##      próximo turno do adversário (ou quando alguém da equipe dele mexer nela).
 ## 2. Borderline (ação de habilidade, recarga de 2 rodadas, compartilhada com a variante):
 ##      passe alto (bola no chão ou suspensa, Kiyora no chão) que sobe a Voando no caminho.
 ##      O Kiyora escolhe DOIS aliados e a bola vai para o que tiver MENOS gols (empate = sorteio).
@@ -47,8 +49,8 @@ const TEAL_LIGHT := Color(0.28, 0.68, 0.64)
 @export_group("Dance Battle")
 @export var dance_cooldown: int = 2
 @export var dance_pull_time: float = 0.25          # tempo que a bola leva para ser puxada
-## Por quantas rodadas a bola fica "armada" esperando um inimigo (contando a atual)
-@export var dance_trap_rounds: int = 2
+@export var dance_ball_offset: float = 24.0        # a bola fica grudada à frente dele
+@export var dance_trigger_radius: float = 75.0     # inimigo agindo a esta distância da bola = tentou interagir
 ## Duração do Backspin, em rodadas depois da atual
 @export var backspin_rounds: int = 3
 
@@ -71,9 +73,10 @@ const TEAL_LIGHT := Color(0.28, 0.68, 0.64)
 
 ## Backspin vale até o fim desta rodada (-1 = inativo)
 var _backspin_until_round: int = -1
-## Dance Battle: bola "armada" esperando um inimigo
+## Dance Battle: a bola está grudada no Kiyora
 var _trap_on: bool = false
-var _trap_until_round: int = -1
+var _trap_triggered: bool = false   # um inimigo já caiu nesta janela (o Backspin já foi liberado)
+var _trap_touches: int = 0          # qualquer toque depois disto solta a bola
 var _trap_ring: TrapRing = null
 ## Muda a cada Dance Battle / partida nova: uma espera antiga percebe e para
 var _dance_token: int = 0
@@ -114,13 +117,27 @@ func _make_kick_fx() -> KickFX:
 
 
 func _exit_tree() -> void:
-	_end_trap()
+	_end_trap(true)
 
 
 func _hook_manager() -> void:
 	var m: MatchManager = _get_manager()
 	if m:
 		m.round_started.connect(_on_round_started)
+		m.turn_ended.connect(_on_turn_ended)
+	var ball: Ball = _get_ball()
+	if ball:
+		ball.was_reset.connect(_on_ball_reset)
+
+
+## Dance Battle: sem ninguém tocar, a bola solta no fim do turno do adversário
+func _on_turn_ended(ended_team: int) -> void:
+	if _trap_on and ended_team != team:
+		_end_trap(true)
+
+
+func _on_ball_reset() -> void:
+	_end_trap(false)   # gol / reposição: a bola já foi solta pelo próprio Ball
 
 
 func _on_round_started(_round_number: int) -> void:
@@ -168,104 +185,137 @@ func _can_receive_high_except(p: Player, skip: Player) -> bool:
 
 # ---------- DANCE BATTLE ----------
 
+## Onde a bola fica grudada: à frente do Kiyora
+func _trap_point() -> Vector2:
+	return global_position + Vector2(facing * dance_ball_offset, 0.0)
+
+
 func _use_dance() -> bool:
 	var m: MatchManager = _get_manager()
 	var ball: Ball = _get_ball()
 	if m == null or ball == null or get_kick_type(ball) == KickType.NONE:
 		return false
 
+	face_towards(ball.global_position - global_position)
 	if not await play_action(&"dance_battle"):
 		return false   # ação cancelada (ex: a partida reiniciou)
 	# A bola pode ter saído do alcance durante a animação
 	if not is_instance_valid(ball) or get_kick_type(ball) == KickType.NONE:
 		return false
 
-	_end_trap()
+	_end_trap(false)
 	_dance_token += 1
 	var token: int = _dance_token
 
 	# PUXA a bola: ela desliza (e desce, se estava suspensa) até ficar colada no Kiyora
-	var dir: Vector2 = global_position.direction_to(ball.global_position)
-	if dir.length() < 0.1:
-		dir = Vector2(facing, 0.0)
-	var pos: Vector2 = global_position + dir * (body_radius + ball.collision_radius + 6.0)
-	ball.hover_to(pos, 0.0, dance_pull_time)
+	m.clear_pending_pass()          # passe alto em andamento: a bola agora é do Kiyora
+	ball.register_touch(self)
+	ball.hover_to(_trap_point(), 0.0, dance_pull_time)
 	ball.play_fx(kick_fx)
-	await get_tree().create_timer(dance_pull_time + 0.05).timeout
+	await get_tree().create_timer(dance_pull_time + 0.02).timeout
 	if token != _dance_token or not is_instance_valid(ball) or m.match_over:
 		return false
 
-	ball.release_hover()
+	# GRUDA: a bola fica pairando colada nele e travada para os adversários (Ball.is_locked_for)
 	ball.velocity = Vector2.ZERO
 	ball.vel_z = 0.0
 	ball.height = 0.0
-	ball.register_touch(self)   # agora ele é o último a tocar na bola
-
-	# Arma a bola: um anel azul-esverdeado gira em volta dela
+	ball.spell_owner = self
+	_trap_touches = ball.interaction_count   # qualquer toque depois disto solta a bola
 	_trap_on = true
-	_trap_until_round = m.round_number + dance_trap_rounds - 1
+	_trap_triggered = false
 	_trap_ring = TrapRing.new()
 	_trap_ring.ring_color = TEAL_LIGHT
 	_trap_ring.core_color = TEAL
 	ball.add_child(_trap_ring)
 
 	start_cooldown(CD_DANCE, dance_cooldown)
-	_dance_watch(token)   # roda em segundo plano, sem esperar
 	return true
 
 
-## Fica de olho na bola armada. Se um inimigo interagir com ela, dispara o contra-ataque. Se um
-## aliado (ou o próprio Kiyora) mexer na bola, a bola segurada/pairando ou as rodadas acabarem,
-## a armadilha some sem efeito.
-func _dance_watch(token: int) -> void:
+## Enquanto a bola está grudada: ela acompanha o Kiyora e, no turno do adversário, um inimigo
+## que age (corre/desliza) perto da bola dispara o contra-ataque.
+func _physics_process(delta: float) -> void:
+	super(delta)
+	_update_trap()
+
+
+func _update_trap() -> void:
+	if not _trap_on:
+		return
 	var m: MatchManager = _get_manager()
 	var ball: Ball = _get_ball()
-	var touches: int = ball.interaction_count
-	var last_pos: Vector2 = ball.global_position
-	while true:
-		await get_tree().physics_frame
-		if token != _dance_token or not is_instance_valid(ball) or m.match_over:
-			return
-		if m.round_number > _trap_until_round or ball.is_held() or ball.hovering:
-			_end_trap()
-			return
-		if ball.interaction_count != touches:
-			var toucher: Player = ball.last_toucher
-			if toucher != null and toucher.team != team:
-				_dance_trigger(ball, toucher, last_pos)
-			else:
-				_end_trap()
-			return
-		last_pos = ball.global_position
+	if m == null or ball == null or m.match_over:
+		_end_trap(false)
+		return
+	# Alguém do time dele tocou/chutou a bola, ou ela foi solta/segurada por fora: acabou
+	if ball.spell_owner != self or not ball.hovering or ball.is_held() \
+			or ball.interaction_count != _trap_touches:
+		_end_trap(false)
+		return
+	if is_down:   # derrubado: perde a bola
+		_end_trap(true)
+		return
 
-
-## Um inimigo mexeu na bola armada: ele cai, a bola volta para onde estava e o Backspin liga
-func _dance_trigger(ball: Ball, enemy: Player, last_pos: Vector2) -> void:
-	var m: MatchManager = _get_manager()
-	_end_trap()
-
-	ball.stop_fx()
-	ball.release_hover()
-	ball.velocity = Vector2.ZERO
-	ball.vel_z = 0.0
+	ball.global_position = _trap_point()
 	ball.height = 0.0
-	ball.pending_shot_chance = Ball.NO_SHOT   # o chute do inimigo (se houve) não vale
-	ball.global_position = last_pos
 
+	# "Tentar interagir" só conta no turno do adversário e só uma vez por janela
+	if _trap_triggered or m.current_team == team:
+		return
+	for other: Player in get_tree().get_nodes_in_group("players"):
+		if other.team == team or other.is_down or other.state == State.IDLE \
+				or not other.can_reach_level(ball.get_level()):
+			continue
+		var radius: float = maxf(dance_trigger_radius, other.kick_range + 5.0)
+		if other.global_position.distance_to(ball.global_position) <= radius:
+			_dance_trigger(other, false)
+			return
+
+
+## Um inimigo tentou interagir: ele cai e o Backspin liga. A bola continua grudada.
+func _dance_trigger(enemy: Player, from_slide: bool) -> void:
+	var m: MatchManager = _get_manager()
+	if _trap_triggered or m == null:
+		return
+	_trap_triggered = true
+
+	# Quem estava correndo é parado. Quem deu Carrinho (from_slide) é derrubado sem interromper o
+	# carrinho dele no meio do próprio _check_slide_hits: o carrinho acaba sozinho logo depois.
+	if not from_slide:
+		enemy._stop_current_action()
 	enemy.knock_down()
 	var pulse := PulseRing.new()
 	pulse.ring_color = TEAL_LIGHT
 	enemy.add_child(pulse)
+	hop_over()   # o pulinho de quem desvia/dança
 
 	_backspin_until_round = m.round_number + backspin_rounds
 	queue_redraw()
 
 
-func _end_trap() -> void:
+## O Carrinho de um inimigo contra o Kiyora (com a bola grudada) conta como tentar interagir:
+## o Kiyora desvia e quem deu o carrinho é que cai.
+func try_counter_slide(attacker: Player) -> bool:
+	if not _trap_on or _trap_triggered or is_down or attacker.team == team:
+		return false
+	attacker._slide_hit_ball = true   # o resto do carrinho não tenta chutar a bola
+	_dance_trigger(attacker, true)
+	return true
+
+
+## release = true solta a bola (ela fica onde está); false = ela já foi tocada/solta por outro
+func _end_trap(release: bool) -> void:
+	var was_on: bool = _trap_on
 	_trap_on = false
+	_trap_triggered = false
 	if _trap_ring != null and is_instance_valid(_trap_ring):
 		_trap_ring.queue_free()
 	_trap_ring = null
+	if was_on and release:
+		var ball: Ball = _get_ball()
+		if ball != null and is_instance_valid(ball) and ball.spell_owner == self:
+			ball.release_hover()   # volta a gravidade e a trava some
 
 
 # ---------- BORDERLINE / EVEN THE GODS ----------
@@ -443,7 +493,7 @@ func _check_slide_hits() -> void:
 
 func get_skills() -> Array[Dictionary]:
 	var list: Array[Dictionary] = []
-	var dance_name: String = "Dance Battle (armado)" if _trap_on else skill_label("Dance Battle", CD_DANCE)
+	var dance_name: String = "Dance Battle (grudada)" if _trap_on else skill_label("Dance Battle", CD_DANCE)
 	list.append({"id": SKILL_DANCE, "name": dance_name})
 	var border_name: String = "Even the Gods" if get_pass_skill() == PassSkill.GODS else "Borderline"
 	list.append({"id": SKILL_BORDER, "name": skill_label(border_name, CD_BORDER)})
@@ -495,9 +545,11 @@ func get_skill_info(skill_id: StringName) -> Dictionary:
 	match skill_id:
 		SKILL_DANCE:
 			title = "Dance Battle"
-			text = ("Com a bola ao alcance (no chão ou suspensa) e o Kiyora no chão, ele puxa a bola e a deixa armada. "
-				+ "Se um inimigo interagir com ela de qualquer forma, o inimigo cai e o Kiyora libera o Backspin: "
-				+ "por %d rodadas, as habilidades dele ficam melhores (Even the Gods e Twister).\n"
+			text = ("Com a bola ao alcance (no chão ou suspensa) e o Kiyora no chão, ele puxa a bola e a gruda nele: "
+				+ "ela acompanha o Kiyora e os adversários não conseguem tocar nela. "
+				+ "Se um inimigo tentar interagir (correr ou deslizar para perto, ou dar Carrinho nele), o inimigo cai e o Kiyora libera o Backspin: "
+				+ "por %d rodadas, as habilidades dele ficam melhores (Even the Gods e Twister). "
+				+ "A bola solta no fim do próximo turno do adversário.\n"
 				+ "Recarga: %d rodadas.") % [backspin_rounds, dance_cooldown]
 		SKILL_BORDER:
 			title = "Even the Gods" if get_pass_skill() == PassSkill.GODS else "Borderline"
@@ -523,7 +575,7 @@ func get_skill_info(skill_id: StringName) -> Dictionary:
 func reset_for_new_match() -> void:
 	super()
 	_dance_token += 1   # uma espera de Dance Battle em andamento percebe e para
-	_end_trap()
+	_end_trap(true)
 	_backspin_until_round = -1
 	if _six_step_active:
 		_six_step_active = false

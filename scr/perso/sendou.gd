@@ -57,14 +57,14 @@ enum ShotVariant { NONE, ACE, STAR, SNIPER }
 
 @export_group("Star Talent / Semi Predator")
 @export var talent_dash_distance: float = 320.0      # avanço mirável
-@export var talent_cooldown: int = 2                 # recarga, igual para as duas variantes
+@export var talent_cooldown: int = 3                 # recarga, igual para as duas variantes
 @export var dash_duration: float = 0.45              # tempo do avanço (começa rápido e desacelera)
 @export var dash_ball_radius: float = 55.0           # "encontrar a bola": distância que conta
 ## Onde acaba o setor defensivo, como fração da metade do campo a partir do meio:
 ## 0 = linha do meio-campo; 0.33 = defensivo só até 1/3 da metade; -0.33 = vai além do meio-campo
 @export var sector_split: float = 0.0
 @export var throw_speed: float = 1100.0              # Star Talent: velocidade da bola arremessada (px/s)
-@export var semi_shots: int = 3                      # Semi Predator: quantos chutes recebem o bônus
+@export var semi_shots: int = 2                      # Semi Predator: quantos chutes recebem o bônus
 @export_range(0.0, 1.0) var semi_shot_bonus: float = 0.05   # +5% de chance
 @export var semi_force_mult: float = 1.15            # "um pouco mais de força" em qualquer chute
 @export var semi_extra_skills: int = 1               # ações de habilidade extras para o Sendou

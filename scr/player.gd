@@ -216,6 +216,7 @@ var slide_dir: Vector2 = Vector2.RIGHT
 var slide_time_left: float = 0.0
 var _slide_hit_players: Array[Player] = []
 var _slide_hit_ball: bool = false
+var _slide_hit_enemy: bool = false   # o carrinho já acertou um inimigo: os outros não sofrem nada
 
 ## Posição da formação confirmada (definida pelo MatchManager). É para cá que o jogador
 ## volta depois de um gol e quando a partida recomeça.
@@ -453,6 +454,7 @@ func start_slide(direction: Vector2) -> void:
 	slide_time_left = slide_duration
 	_slide_hit_players.clear()
 	_slide_hit_ball = false
+	_slide_hit_enemy = false
 	state = State.SLIDING
 
 
@@ -503,18 +505,27 @@ func _clear_slide_collision_exceptions() -> void:
 
 ## A rasteira só acerta quem está no CHÃO: quem pulou desvia do carrinho.
 func _check_slide_hits() -> void:
-	for other: Player in get_tree().get_nodes_in_group("players"):
-		if other.team == team or other.is_down or other in _slide_hit_players:
-			continue
-		if other.height_level != Heights.Level.GROUND or other.slide_immune:
-			continue
-		if global_position.distance_to(other.global_position) <= slide_hit_radius:
-			_slide_hit_players.append(other)
+	# Um carrinho derruba (ou é desviado por) UM inimigo só: o primeiro que ele acertar, o mais
+	# perto. Depois disso, os outros inimigos no caminho não sofrem nada.
+	if not _slide_hit_enemy:
+		var target: Player = null
+		var target_dist: float = INF
+		for other: Player in get_tree().get_nodes_in_group("players"):
+			if other.team == team or other.is_down or other in _slide_hit_players:
+				continue
+			if other.height_level != Heights.Level.GROUND or other.slide_immune:
+				continue
+			var d: float = global_position.distance_to(other.global_position)
+			if d <= slide_hit_radius and d < target_dist:
+				target = other
+				target_dist = d
+		if target != null:
+			_slide_hit_enemy = true
+			_slide_hit_players.append(target)
 			# Counter reativo (ex: Gremlin Taunt do Charles): se ele disparar, quem dá o
 			# carrinho é que acaba caindo, então o knock_down() normal aqui é pulado.
-			if other.try_counter_slide(self):
-				continue
-			other.knock_down()
+			if not target.try_counter_slide(self):
+				target.knock_down()
 
 	var ball := get_tree().get_first_node_in_group("ball") as Ball
 	if ball and not ball.is_held() and not ball.is_locked_for(team) and not _slide_hit_ball \

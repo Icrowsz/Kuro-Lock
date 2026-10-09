@@ -5,8 +5,13 @@ extends Player
 ##
 ## 1. Trap (GRATUITA, 1x por turno): com a bola Suspensa e próxima, Nagi salta até ela, domina
 ##      e fica Suspenso (a bola fica pairando do lado dele).
-##    - Heavy (complemento; recarga de 2 rodadas, COMPARTILHADA com o Bicycle): Nagi e bola
-##      Suspensos/Voando -> chute de trajetória Suspensa que CAI para o Chão (sem quicar).
+##    - Heavy (recarga de 2 rodadas, COMPARTILHADA com o Bicycle): chute de trajetória Suspensa
+##      que CAI para o Chão (sem quicar). Dois jeitos de usar:
+##        * Complemento GRATUITO da Trap: logo depois do Trap (Nagi e bola Suspensos) não gasta
+##          ação de habilidade;
+##        * SOZINHO, com o Nagi no CHÃO e a bola ao alcance (no chão ou suspensa): gasta uma
+##          ação de habilidade normal.
+##      (Com Nagi e bola Suspensos/Voando sem o Trap antes, também funciona gastando a ação.)
 ##    - Bicycle (variante automática do botão Heavy): Nagi Suspenso + bola Voando -> bicicleta.
 ##      Se a situação serve para os dois (Nagi Suspenso + bola Voando), o Bicycle ganha.
 ## 2. Zero Reset Turn (recarga de 3 rodadas): os dois no Chão e bola próxima -> Nagi segura a
@@ -23,7 +28,7 @@ extends Player
 ##      Suspenso/Voando, ganha +1 ação de habilidade extra neste turno.
 ##
 ## Combos que o conjunto permite (com 1 ação de habilidade por turno):
-##   Trap (grátis) -> Heavy                      | Lift -> Control (grátis, +1) -> Bicycle
+##   Trap (grátis) -> Heavy (grátis)             | Lift -> Control (grátis, +1) -> Bicycle
 ##
 ## Como montar a cena: Nova Cena Herdada de player.tscn -> anexe este script ao nó raiz
 ## -> renomeie o nó raiz para "Nagi".
@@ -97,6 +102,8 @@ enum ZeroVariant { NONE, ZERO_RESET, FAKE_VOLLEY }
 @export var skill_icons: Dictionary = {}
 
 var _traps_this_turn: int = 0
+## O Trap deste turno foi usado e o Heavy logo depois sai de graça (complemento do Trap)
+var _trap_followup: bool = false
 
 ## Zero Reset Turn
 var _zero_active: bool = false
@@ -219,6 +226,7 @@ func _on_turn_started(turn_team: int) -> void:
 	if turn_team != team:
 		return
 	_traps_this_turn = 0
+	_trap_followup = false
 	# O turno do time dele voltou: o adversário já jogou, a janela do Zero Reset Turn acabou
 	if _zero_active and _zero_enemy_turn_pending:
 		_end_zero_reset()
@@ -339,6 +347,7 @@ func _use_trap() -> bool:
 	_pulse(&"ring", Color(0.92, 0.92, 1.0))
 	_say("TRAP!")
 	_ball_aura(ball, soft_fx, 0.5)
+	_trap_followup = true   # o Heavy logo depois é gratuito (complemento do Trap)
 	return true
 
 
@@ -350,11 +359,20 @@ func get_heavy_variant() -> HeavyVariant:
 	if ball == null or get_kick_type(ball) == KickType.NONE:
 		return HeavyVariant.NONE
 	var ball_level: Heights.Level = ball.get_level()
-	if height_level == Heights.Level.GROUND or ball_level == Heights.Level.GROUND:
+	# Sozinho no CHÃO: o Heavy vale com a bola ao alcance (no chão ou suspensa)
+	if height_level == Heights.Level.GROUND:
+		return HeavyVariant.HEAVY
+	if ball_level == Heights.Level.GROUND:
 		return HeavyVariant.NONE
 	if height_level == Heights.Level.SUSPENDED and ball_level == Heights.Level.FLYING:
 		return HeavyVariant.BICYCLE
 	return HeavyVariant.HEAVY
+
+
+## O Heavy está de graça agora? Só como complemento do Trap (Heavy, não Bicycle) e fora de recarga
+func _heavy_is_trap_followup() -> bool:
+	return _trap_followup and not is_on_cooldown(CD_HEAVY) \
+		and get_heavy_variant() == HeavyVariant.HEAVY
 
 
 func _use_heavy_skill() -> bool:
@@ -401,6 +419,7 @@ func _use_heavy_skill() -> bool:
 	if not is_bicycle and qte_ok:
 		ball.bounces_left = 0
 
+	_trap_followup = false   # o complemento grátis do Trap foi gasto
 	start_cooldown(CD_HEAVY, heavy_cooldown)
 	return true
 
@@ -684,6 +703,9 @@ func can_use_skill(skill_id: StringName = &"default") -> bool:
 
 
 func use_skill(skill_id: StringName = &"default") -> bool:
+	# Usar qualquer outra habilidade depois do Trap desfaz o "Heavy grátis" (só vale logo depois)
+	if skill_id != SKILL_TRAP and skill_id != SKILL_HEAVY and skill_id != SKILL_CONTROL:
+		_trap_followup = false
 	match skill_id:
 		SKILL_TRAP:
 			return await _use_trap()
@@ -698,20 +720,24 @@ func use_skill(skill_id: StringName = &"default") -> bool:
 	return false
 
 
-## Trap e Control não gastam ação de habilidade
+## Trap e Control não gastam ação de habilidade. O Heavy também não, quando é o complemento do Trap.
 func skill_is_free(skill_id: StringName) -> bool:
 	match skill_id:
 		SKILL_TRAP:
 			return true
+		SKILL_HEAVY:
+			return _heavy_is_trap_followup()
 		SKILL_CONTROL:
 			return control_is_free
 	return false
 
 
 ## Sobrou Trap/Control para usar? Então o turno não acaba sozinho quando as ações acabam
-## (ex: Lift gasta a última ação, mas o Control vem de graça logo depois)
+## (ex: Lift gasta a última ação, mas o Control vem de graça logo depois; o Trap também
+## deixa o Heavy de graça)
 func has_free_followup() -> bool:
-	return can_use_skill(SKILL_TRAP) or (control_is_free and can_use_skill(SKILL_CONTROL))
+	return can_use_skill(SKILL_TRAP) or _heavy_is_trap_followup() \
+		or (control_is_free and can_use_skill(SKILL_CONTROL))
 
 
 # ---------- DESCRIÇÃO (balão do menu, ver action_menu.gd) ----------
@@ -727,11 +753,11 @@ func get_skill_info(skill_id: StringName) -> Dictionary:
 		SKILL_TRAP:
 			title = "Trap"
 			text = ("Com a bola Suspensa e próxima, Nagi salta até ela, domina e fica Suspenso.\n"
-				+ "Não gasta ação de habilidade (%d vez por turno).") % max_traps_per_turn
+				+ "Não gasta ação de habilidade (%d vez por turno). Logo depois, o Heavy também sai de graça.") % max_traps_per_turn
 		SKILL_HEAVY:
 			title = "Bicycle" if get_heavy_variant() == HeavyVariant.BICYCLE else "Heavy"
 			text = ("Chute de habilidade. A variante muda sozinha com a altura dele e da bola:\n"
-				+ "• Heavy (Nagi e bola Suspensos ou Voando): a trajetória é Suspensa, mas a bola cai para o chão sem quicar. %d%% de chance de gol.\n"
+				+ "• Heavy: a trajetória é Suspensa, mas a bola cai para o chão sem quicar. %d%% de chance de gol. Sozinho, com o Nagi no chão e a bola ao alcance (no chão ou suspensa); também com Nagi e bola Suspensos ou Voando. É GRATUITO logo depois do Trap.\n"
 				+ "• Bicycle (Nagi Suspenso e bola Voando): bicicleta. %d%%.\n"
 				+ "Recarga: %d rodadas, compartilhada entre os dois.") % [
 				_pct(chance_heavy), _pct(chance_bicycle), heavy_cooldown]
@@ -761,6 +787,7 @@ func get_skill_info(skill_id: StringName) -> Dictionary:
 func reset_for_new_match() -> void:
 	super()   # zera também extra_skill_left e as recargas
 	_traps_this_turn = 0
+	_trap_followup = false
 	_temp_extras = 0
 	_zero_active = false
 	_zero_triggered = false

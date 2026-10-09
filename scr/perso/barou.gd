@@ -39,9 +39,9 @@ enum ShotVariant { NONE, NERO, TERROR, VILLAIN }
 
 @export_group("Terror / Villain")
 @export_range(0.0, 1.0) var terror_chance: float = 0.45
-@export var terror_force_mult: float = 1.2         # "mais força"
+@export var terror_force_mult: float = 1.3         # "mais força"
 @export_range(0.0, 1.0) var villain_chance: float = 0.50
-@export var villain_force_mult: float = 1.35
+@export var villain_force_mult: float = 1.45
 @export var curve_accel: float = 150.0             # força lateral que faz a bola curvar (px/s²)
 @export var curve_side: float = 1.0                # 1 ou -1: para que lado a bola curva
 @export var terror_curve_time: float = 0.5         # curva pequena: dura pouco
