@@ -22,6 +22,10 @@ extends Node
 signal state_changed
 signal turn_started(team: int)
 signal turn_ended(team: int)
+## Um time ganhou uma rodada BÔNUS (interceptou o lançamento do goleiro) / a rodada bônus acabou.
+## A rodada bônus NÃO emite turn_started/turn_ended/round_*: não conta como turno nem faz recargas andarem.
+signal bonus_turn_started(team: int)
+signal bonus_turn_ended
 signal round_started(round_number: int)
 signal round_ended(round_number: int)
 ## Trocou de tempo (1 = primeiro tempo, 2 = segundo tempo). Não dispara de novo
@@ -107,6 +111,12 @@ const PASS_VARIANT_NAMES := {
 @export var protagonist_general_actions: int = 3
 @export var protagonist_skill_actions: int = 1
 
+@export_group("Rodada bônus (interceptou o lançamento do goleiro)")
+@export var bonus_protagonist_general_actions: int = 1
+@export var bonus_protagonist_skill_actions: int = 1
+@export var bonus_secondary_general_actions: int = 1
+@export var bonus_secondary_skill_actions: int = 0
+
 @export_group("Ações dos Secundários (divididas pelo time)")
 @export var secondary_general_actions: int = 2
 @export var secondary_skill_actions: int = 1
@@ -185,6 +195,11 @@ var protagonist_general_left: int = 0
 var protagonist_skill_left: int = 0
 var secondary_general_left: int = 0
 var secondary_skill_left: int = 0
+
+## Rodada bônus: true enquanto o time que interceptou o lançamento do goleiro joga o turno extra
+var in_bonus_turn: bool = false
+var _bonus_team: int = -1     # time que ganhou a rodada bônus e ainda não jogou (-1 = ninguém)
+var _resume_team: int = -1    # time cujo turno continua depois da rodada bônus
 
 
 func _ready() -> void:
@@ -293,6 +308,9 @@ func return_to_formation() -> void:
 	secondary_skill_left = 0
 	pass_variant = PassVariant.GROUND
 	pass_hint = ""
+	in_bonus_turn = false
+	_bonus_team = -1
+	_resume_team = -1
 	_repositioning = false
 	_picking_skill_target = false
 	_clear_pending_pass()
@@ -358,11 +376,65 @@ func _begin_turn() -> void:
 	await _wait_for_keepers()
 	if match_over:
 		return
+	# Lançamento do goleiro interceptado: o time que interceptou joga uma rodada BÔNUS antes
+	# de este turno seguir
+	if _bonus_team >= 0:
+		_start_bonus_turn()
+		return
+	_set_phase(Phase.CHOOSING_PROTAGONIST)
+
+
+## Chamado pelo Goalkeeper quando um adversário intercepta o lançamento dele
+func on_keeper_throw_intercepted(by: Player) -> void:
+	if match_over or by == null:
+		return
+	_bonus_team = by.team
+
+
+## Abre a rodada bônus do time que interceptou (o turno de quem lançou fica esperando)
+func _start_bonus_turn() -> void:
+	_resume_team = current_team
+	current_team = _bonus_team
+	_bonus_team = -1
+	in_bonus_turn = true
+	for p in get_team_players(current_team):
+		p.land()
+		p.runs_this_turn = 0
+		p.slides_this_turn = 0
+	_clear_roles()
+	protagonist = null
+	active_player = null
+	protagonist_general_left = 0
+	protagonist_skill_left = 0
+	secondary_general_left = 0
+	secondary_skill_left = 0
+	announce_keeper("Rodada bônus para %s!" % get_team_name(current_team), current_team)
+	bonus_turn_started.emit(current_team)
+	_set_phase(Phase.CHOOSING_PROTAGONIST)
+
+
+## Fim da rodada bônus: o turno de quem lançou a bola recomeça (sem emitir turn_ended/turn_started)
+func _end_bonus_turn() -> void:
+	in_bonus_turn = false
+	_clear_roles()
+	protagonist = null
+	active_player = null
+	protagonist_general_left = 0
+	protagonist_skill_left = 0
+	secondary_general_left = 0
+	secondary_skill_left = 0
+	current_team = _resume_team
+	_resume_team = -1
+	bonus_turn_ended.emit()
 	_set_phase(Phase.CHOOSING_PROTAGONIST)
 
 
 func _end_turn() -> void:
 	if match_over:
+		return
+
+	if in_bonus_turn:
+		_end_bonus_turn()
 		return
 
 	# Passe alto que chegou neste turno e ninguém tocou: cai para o chão
@@ -499,10 +571,16 @@ func select_protagonist(player: Player) -> void:
 	for p in get_team_players(current_team):
 		p.role = Player.Role.PROTAGONIST if p == protagonist else Player.Role.SECONDARY
 
-	protagonist_general_left = protagonist_general_actions
-	protagonist_skill_left = protagonist_skill_actions
-	secondary_general_left = secondary_general_actions
-	secondary_skill_left = secondary_skill_actions
+	if in_bonus_turn:
+		protagonist_general_left = bonus_protagonist_general_actions
+		protagonist_skill_left = bonus_protagonist_skill_actions
+		secondary_general_left = bonus_secondary_general_actions
+		secondary_skill_left = bonus_secondary_skill_actions
+	else:
+		protagonist_general_left = protagonist_general_actions
+		protagonist_skill_left = protagonist_skill_actions
+		secondary_general_left = secondary_general_actions
+		secondary_skill_left = secondary_skill_actions
 
 	set_active_player(protagonist)
 	_set_phase(Phase.CHOOSING_ACTION)

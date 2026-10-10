@@ -31,8 +31,10 @@ extends Player
 ##      maior, a bola sobe a "voando" no meio e cai logo depois. QTE difícil, 50%.
 ##
 ## ASSUMIÇÕES (o pedido não definia; ajuste nos @export):
-##  - Os QTEs de receptor rodam AUTOMATICAMENTE quando a bola chega (e errar não tem punição):
-##    ler "se quiser interagir" como opcional exigiria um gancho no MatchManager.
+##  - Os QTEs de receptor rodam AUTOMATICAMENTE quando a bola chega: ler "se quiser interagir"
+##    como opcional exigiria um gancho no MatchManager. Errar o QTE do Perfect Pass faz a bola
+##    passar direto pelo receptor e cair mais longe (pass_miss_distance); no Flawless errar só
+##    perde o bônus.
 ##  - Ultra Vision vale só para o Sae (alcance e chute); a ação geral extra vale para os secundários.
 ##  - Ultra Vision limpa trava, penalidades de chute e confusão. Efeitos que outros personagens
 ##    aplicam "consultando" o dono (ex: lentidão do Yo.. do Lorenzo) não dá para limpar daqui.
@@ -68,6 +70,8 @@ enum PassMode { NONE, PERFECT, FLAWLESS, UNBALANCED }
 @export var pass_receive_bonus: float = 0.07     # +7% no próximo chute do receptor
 @export var pass_arch_suspended: float = 22.0    # quanto a bola "sobe além" no meio do caminho
 @export var pass_arch_flying: float = 36.0
+@export var pass_miss_distance: float = 260.0    # receptor errou o QTE: a bola passa direto e cai tanto além dele (px)
+@export var pass_miss_time: float = 0.45         # tempo que a bola leva para passar direto e cair
 
 @export_group("Flawless")
 @export var flawless_range: float = 600.0
@@ -622,26 +626,81 @@ func _run_perfect_pass(target: Player, ball: Ball, level: int) -> bool:
 		# Fica pairando no estado escolhido, igual a um passe alto recebido (cai no fim do turno)
 		m.register_skill_pass(team, target)
 	m.pass_completed.emit(self, target)
-	await _receive_qte(target, pass_receive_bonus, false)
+	var controlled: bool = await _receive_qte(target, pass_receive_bonus, false)
+	if not controlled and epoch == _epoch:
+		await _let_ball_run_past(m, ball, dir)   # errou o controle: a bola passa direto e cai mais longe
 	return true
 
 
-## O receptor faz o QTE; acertando, ganha bônus no próximo chute dele
-func _receive_qte(receiver: Player, bonus: float, hard: bool) -> void:
+## O receptor faz o QTE; acertando, ganha bônus no próximo chute dele.
+## Devolve true se ele dominou o passe (ou se o QTE nem chegou a valer: partida acabou/reiniciou).
+func _receive_qte(receiver: Player, bonus: float, hard: bool) -> bool:
 	var m: MatchManager = _get_manager()
 	if m == null or m.match_over or not is_instance_valid(receiver):
-		return
+		return true
 	var epoch: int = _epoch
 	var ok: bool = receiver.skips_qte()
 	if not ok:
 		ok = await _run_sae_qte(hard, "Domine o passe do Sae!")
 	if epoch != _epoch or not is_instance_valid(receiver):
-		return
+		return true
 	if ok:
 		receiver.next_shot_bonus += bonus
 		_show_popup("+%d%% no próximo chute" % int(round(bonus * 100.0)), PINK_LIGHT)
 	else:
 		_show_popup("Errou o controle", Color.WHITE)
+	return ok
+
+
+## Perfect Pass com o QTE do receptor errado: a bola passa direto por ele (na mesma direção do
+## passe), desce e cai pass_miss_distance px mais longe, parada no chão.
+func _let_ball_run_past(m: MatchManager, ball: Ball, dir: Vector2) -> void:
+	if m.match_over or ball.is_held():   # alguém já pegou a bola durante o QTE
+		return
+	var epoch: int = _epoch
+	m.clear_pending_pass()   # o passe pairando (suspenso/voando) deixa de valer
+	var start: Vector2 = ball.global_position
+	var start_h: float = ball.height
+	var dest: Vector2 = _clamp_to_pitch(start + dir * pass_miss_distance)
+
+	# A bola volta a ser conduzida por este script e não esbarra no receptor ao passar
+	ball.hovering = true
+	ball.velocity = Vector2.ZERO
+	ball.vel_z = 0.0
+	ball.pending_shot_chance = Ball.NO_SHOT
+	ball.collisions_paused = true
+	ball.trail_enabled = true
+	var time: float = maxf(pass_miss_time, 0.1)
+	var elapsed: float = 0.0
+	while elapsed < time:
+		await get_tree().physics_frame
+		if epoch != _epoch or m.match_over:
+			break
+		elapsed += get_physics_process_delta_time()
+		var f: float = clampf(elapsed / time, 0.0, 1.0)
+		ball.global_position = start.lerp(dest, 1.0 - pow(1.0 - f, 1.5))   # vai amortecendo
+		ball.height = lerpf(start_h, 0.0, f * f)                           # desce até o chão
+	ball.collisions_paused = false
+	ball.trail_enabled = false
+	if epoch != _epoch or m.match_over:
+		return
+	ball.global_position = dest
+	ball.height = 0.0
+	ball.release_hover()
+	ball.velocity = Vector2.ZERO
+	ball.vel_z = 0.0
+
+
+## Mantém uma posição (global) dentro do campo, com uma folga da linha
+func _clamp_to_pitch(global_p: Vector2) -> Vector2:
+	var field := get_tree().get_first_node_in_group("field") as Field
+	if field == null:
+		return global_p
+	var half: Vector2 = field.pitch_size * 0.5 - Vector2(20.0, 20.0)
+	var l: Vector2 = field.to_local(global_p)
+	l.x = clampf(l.x, -half.x, half.x)
+	l.y = clampf(l.y, -half.y, half.y)
+	return field.to_global(l)
 
 
 # ---------- FLAWLESS ----------
@@ -1250,7 +1309,7 @@ func get_skill_info(skill_id: StringName) -> Dictionary:
 						int(_range(unbalanced_range)), unbalanced_rounds]
 				_:
 					title = "Perfect Pass"
-					text = "Bola próxima (chão ou suspensa): escolha em que estado ela chega (Chão, Suspensa ou Voando) e o aliado (alcance %d px). A bola chega NESTA rodada. Interceptar exige um QTE difícil; o receptor faz um QTE fácil e, acertando, ganha +%d%% no próximo chute." % [
+					text = "Bola próxima (chão ou suspensa): escolha em que estado ela chega (Chão, Suspensa ou Voando) e o aliado (alcance %d px). A bola chega NESTA rodada. Interceptar exige um QTE difícil; o receptor faz um QTE fácil e, acertando, ganha +%d%% no próximo chute. Se ele errar o QTE, a bola passa direto e cai mais longe." % [
 						int(_range(pass_range)), _pct(pass_receive_bonus)]
 			text += "\nRecarga: %d rodadas (compartilhada entre as 3 versões)." % pass_cooldown
 		SKILL_ROYAL:

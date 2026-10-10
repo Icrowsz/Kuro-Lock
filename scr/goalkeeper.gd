@@ -15,7 +15,8 @@ extends Node2D
 ## 2) Com a bola nas mãos, LANÇA a bola para um aliado aleatório de longo alcance assim que
 ##    começa o turno do PRÓPRIO time do goleiro (na rodada seguinte à defesa/agarrada).
 ##    A bola vai no nível VOANDO (jogadores adversários SUSPENSOS, que pularam, podem
-##    interceptar) e, ao chegar no aliado, cai no CHÃO.
+##    interceptar) e, ao chegar no aliado, cai no CHÃO. Se um adversário interceptar, o time
+##    dele ganha uma RODADA BÔNUS (veja o MatchManager) antes do turno de quem lançou seguir.
 ## 3) Chute em direção ao gol (ação Chutar, habilidade ou carrinho): ao entrar na área
 ##    acontece uma disputa de sorte. A chance de o chute vencer o goleiro vem do chute
 ##    (padrão 30%, voleio 35%, bola voando 40%). Se vencer, a bola segue; se perder, o
@@ -517,6 +518,8 @@ func _intercepted(by: Player) -> void:
 	ball.release_hover()  # a gravidade volta: a bola cai onde foi interceptada
 	ball.velocity = Vector2.ZERO
 	ball.register_touch(by)
+	if manager:
+		manager.on_keeper_throw_intercepted(by)   # o time de quem interceptou ganha uma rodada bônus
 	state = State.IDLE
 	_say("%s interceptou o lançamento!" % by.get_display_name(), by.team)
 
